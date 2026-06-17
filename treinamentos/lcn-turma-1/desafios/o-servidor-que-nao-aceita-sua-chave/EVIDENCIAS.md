@@ -1,6 +1,6 @@
 # Evidências — O Servidor que Não Aceita Sua Chave
 
-> Submetido em 2026-06-17T13:26:32.937Z
+> Submetido em 2026-06-17T13:33:52.191Z
 
 ## ✅ Criou usuário do time com home + shell **(obrigatório)**
 
