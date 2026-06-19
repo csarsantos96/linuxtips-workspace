@@ -1,0 +1,235 @@
+{
+  "edges": [
+    {
+      "source": "r",
+      "target": "b1"
+    },
+    {
+      "source": "r",
+      "target": "b2"
+    },
+    {
+      "source": "r",
+      "target": "b3"
+    },
+    {
+      "source": "r",
+      "target": "b4"
+    },
+    {
+      "source": "r",
+      "target": "b5"
+    },
+    {
+      "source": "b1",
+      "target": "l1"
+    },
+    {
+      "source": "b1",
+      "target": "l2"
+    },
+    {
+      "source": "b2",
+      "target": "l3"
+    },
+    {
+      "source": "b2",
+      "target": "l4"
+    },
+    {
+      "source": "b2",
+      "target": "l5"
+    },
+    {
+      "source": "b2",
+      "target": "l6"
+    },
+    {
+      "source": "b2",
+      "target": "l7"
+    },
+    {
+      "source": "b2",
+      "target": "l8"
+    },
+    {
+      "source": "b2",
+      "target": "l9"
+    },
+    {
+      "source": "b2",
+      "target": "l10"
+    },
+    {
+      "source": "b3",
+      "target": "l11"
+    },
+    {
+      "source": "b3",
+      "target": "l12"
+    },
+    {
+      "source": "b3",
+      "target": "l13"
+    },
+    {
+      "source": "b4",
+      "target": "l14"
+    },
+    {
+      "source": "b4",
+      "target": "l15"
+    },
+    {
+      "source": "b4",
+      "target": "l16"
+    },
+    {
+      "source": "b4",
+      "target": "l17"
+    },
+    {
+      "source": "b4",
+      "target": "l18"
+    },
+    {
+      "source": "b5",
+      "target": "l19"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "r",
+      "kind": "root",
+      "label": "História da Computação e da Programação"
+    },
+    {
+      "id": "b1",
+      "kind": "branch",
+      "label": "A Origem da Computação"
+    },
+    {
+      "id": "b2",
+      "kind": "branch",
+      "label": "Máquinas Mecânicas Inovadoras"
+    },
+    {
+      "id": "b3",
+      "kind": "branch",
+      "label": "Fundamentos da Computação Moderna"
+    },
+    {
+      "id": "b4",
+      "kind": "branch",
+      "label": "Evolução para Computadores Eletrônicos"
+    },
+    {
+      "id": "b5",
+      "kind": "branch",
+      "label": "Lógica de Programação"
+    },
+    {
+      "id": "l1",
+      "kind": "leaf",
+      "label": "Computadores humanos e necessidade de automação"
+    },
+    {
+      "id": "l2",
+      "kind": "leaf",
+      "label": "O Ábaco: representação física da informação"
+    },
+    {
+      "id": "l3",
+      "kind": "leaf",
+      "label": "Mecanismo de Anticítera: previsão astronômica"
+    },
+    {
+      "id": "l4",
+      "kind": "leaf",
+      "label": "Al-Jazari: máquinas programáveis"
+    },
+    {
+      "id": "l5",
+      "kind": "leaf",
+      "label": "Pascaline: calculadora mecânica"
+    },
+    {
+      "id": "l6",
+      "kind": "leaf",
+      "label": "Leibniz: operações complexas decompostas"
+    },
+    {
+      "id": "l7",
+      "kind": "leaf",
+      "label": "Tear de Jacquard: cartões perfurados"
+    },
+    {
+      "id": "l8",
+      "kind": "leaf",
+      "label": "Charles Babbage: Máquina Analítica"
+    },
+    {
+      "id": "l9",
+      "kind": "leaf",
+      "label": "Ada Lovelace: primeira programadora"
+    },
+    {
+      "id": "l10",
+      "kind": "leaf",
+      "label": "Limitações das máquinas mecânicas"
+    },
+    {
+      "id": "l11",
+      "kind": "leaf",
+      "label": "George Boole: álgebra booleana"
+    },
+    {
+      "id": "l12",
+      "kind": "leaf",
+      "label": "Alan Turing: máquina universal",
+      "position": {
+        "x": 570,
+        "y": 13
+      }
+    },
+    {
+      "id": "l13",
+      "kind": "leaf",
+      "label": "Conceito de algoritmo"
+    },
+    {
+      "id": "l14",
+      "kind": "leaf",
+      "label": "Primeiros computadores eletrônicos"
+    },
+    {
+      "id": "l15",
+      "kind": "leaf",
+      "label": "Relés e válvulas termoiônicas"
+    },
+    {
+      "id": "l16",
+      "kind": "leaf",
+      "label": "ENIAC: primeiro computador de propósito geral",
+      "position": {
+        "x": -622,
+        "y": 310
+      }
+    },
+    {
+      "id": "l17",
+      "kind": "leaf",
+      "label": "Arquitetura de Von Neumann"
+    },
+    {
+      "id": "l18",
+      "kind": "leaf",
+      "label": "Surgimento de linguagens de programação"
+    },
+    {
+      "id": "l19",
+      "kind": "leaf",
+      "label": "Lógica de programação: análise e solução de problemas"
+    }
+  ]
+}
