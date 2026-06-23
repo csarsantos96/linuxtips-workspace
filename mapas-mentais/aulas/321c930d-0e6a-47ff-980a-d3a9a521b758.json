@@ -39,6 +39,14 @@
     {
       "source": "b3",
       "target": "l6"
+    },
+    {
+      "source": "b3",
+      "target": "nmqqrj2wx"
+    },
+    {
+      "source": "b3",
+      "target": "nmqqrjpfi"
     }
   ],
   "nodes": [
@@ -96,6 +104,16 @@
       "id": "l6",
       "kind": "leaf",
       "label": "Decisões de compra"
+    },
+    {
+      "id": "nmqqrj2wx",
+      "label": "Decisões do que comer",
+      "kind": "leaf"
+    },
+    {
+      "id": "nmqqrjpfi",
+      "label": "Decisões do que fazer ao longo do fia",
+      "kind": "leaf"
     }
   ]
 }
