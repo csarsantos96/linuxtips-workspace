@@ -1,0 +1,101 @@
+{
+  "edges": [
+    {
+      "source": "r",
+      "target": "b1"
+    },
+    {
+      "source": "r",
+      "target": "b2"
+    },
+    {
+      "source": "r",
+      "target": "b3"
+    },
+    {
+      "source": "r",
+      "target": "b4"
+    },
+    {
+      "source": "b1",
+      "target": "l1"
+    },
+    {
+      "source": "b1",
+      "target": "l2"
+    },
+    {
+      "source": "b3",
+      "target": "l3"
+    },
+    {
+      "source": "b3",
+      "target": "l4"
+    },
+    {
+      "source": "b3",
+      "target": "l5"
+    },
+    {
+      "source": "b3",
+      "target": "l6"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "r",
+      "kind": "root",
+      "label": "O que é lógica"
+    },
+    {
+      "id": "b1",
+      "kind": "branch",
+      "label": "Definição de lógica"
+    },
+    {
+      "id": "b2",
+      "kind": "branch",
+      "label": "Importância da lógica"
+    },
+    {
+      "id": "b3",
+      "kind": "branch",
+      "label": "Lógica no dia a dia"
+    },
+    {
+      "id": "b4",
+      "kind": "branch",
+      "label": "Pensamento lógico em programação"
+    },
+    {
+      "id": "l1",
+      "kind": "leaf",
+      "label": "Raciocínio e tomada de decisão"
+    },
+    {
+      "id": "l2",
+      "kind": "leaf",
+      "label": "Resolução de problemas"
+    },
+    {
+      "id": "l3",
+      "kind": "leaf",
+      "label": "Planejamento de rotas"
+    },
+    {
+      "id": "l4",
+      "kind": "leaf",
+      "label": "Organização financeira"
+    },
+    {
+      "id": "l5",
+      "kind": "leaf",
+      "label": "Culinária e sequências"
+    },
+    {
+      "id": "l6",
+      "kind": "leaf",
+      "label": "Decisões de compra"
+    }
+  ]
+}
