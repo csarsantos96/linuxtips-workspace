@@ -53,7 +53,7 @@ services:
       - "${POSTGRES_PORT:-5432}:5432"
     volumes:
       - pickstack-postgres-data:/var/lib/postgresql/data
-      - ./docker/postgres-init.sql:/docker-entrypoint-initdb.d/01-schemas.sql:ro
+      - ./docker/postgres-init.sql:/docker-entrypoint-initdb.d/01-schemas.sql:ro,Z
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-pickstack} -d ${POSTGRES_DB:-pickstack}"]
       interval: 5s
@@ -134,6 +134,8 @@ services:
       postgres: { condition: service_healthy }
       redis:    { condition: service_healthy }
       nats:     { condition: service_healthy }
+    healthcheck:
+      disable: true
     networks: [pickstack-net]
 
   focus-svc:
@@ -217,22 +219,27 @@ services:
       focus-svc:  { condition: service_started }
       cards-svc:  { condition: service_started }
       trilha-svc: { condition: service_started }
+    healthcheck:
+      disable: true
     networks: [pickstack-net]
-
   # ---------------------------------------------------------------------------
   # Frontend
   # ---------------------------------------------------------------------------
   web:
     build:
       context: ../web
+      args:
+        PUBLIC_API_URL: "http://localhost:${API_GATEWAY_PORT:-8080}"
     image: ghcr.io/linuxtips/pickstack-web:0.1.0
     container_name: pickstack-web
     profiles: ["web"]
     environment:
       PUBLIC_API_URL: "http://localhost:${API_GATEWAY_PORT:-8080}"
-      NODE_ENV: development
+      NODE_ENV: production
+      PORT: "3000"
     ports:
-      - "${WEB_PORT:-5173}:5173"
+      - "${WEB_PORT:-5173}:3000"
     depends_on:
-      api-gateway: { condition: service_started }
+      api-gateway:
+        condition: service_started
     networks: [pickstack-net]

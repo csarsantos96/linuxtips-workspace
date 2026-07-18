@@ -42,7 +42,7 @@ export async function closeDb(): Promise<void> {
 /** Aplica migrations SQL do diretório src/db/migrations em ordem alfabética. */
 export async function runMigrations(): Promise<void> {
   const sql = getSql();
-  const migDir = new URL("./migrations/", import.meta.url);
+  const migDir = new URL(`file://${Deno.cwd()}/src/db/migrations/`);
   const files: string[] = [];
   for await (const e of Deno.readDir(migDir)) {
     if (e.isFile && e.name.endsWith(".sql")) files.push(e.name);
