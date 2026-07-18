@@ -1,0 +1,33 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: infra-redis
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://charts.bitnami.com/bitnami
+    chart: redis
+    targetRevision: "20.0.5"
+    helm:
+      releaseName: pickstack-redis
+      values: |
+        auth:
+          enabled: false
+        architecture: standalone
+        master:
+          persistence:
+            size: 4Gi
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: pickstack
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

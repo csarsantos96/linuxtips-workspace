@@ -1,0 +1,13 @@
+# PICKStack — code owners
+#
+# Cada módulo pode ter owners diferentes no futuro. Por enquanto, default = mantenedor.
+# Sintaxe: <pattern> <owner1> <owner2> ...
+
+* @badtuxx
+
+# Exemplos para o futuro (deixe comentados até o time crescer):
+# /services/auth-svc/      @badtuxx @security-team
+# /services/cards-svc/     @badtuxx
+# /infra/argocd/           @platform-team
+# /infra/helm/             @platform-team
+# /web/                    @frontend-team

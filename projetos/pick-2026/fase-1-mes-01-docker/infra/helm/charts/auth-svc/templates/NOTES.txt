@@ -1,0 +1,11 @@
+{{ include "svc.fullname" . }} instalado.
+
+Service ClusterIP: {{ include "svc.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.service.port }}
+
+Para verificar:
+  kubectl -n {{ .Release.Namespace }} get pods -l app.kubernetes.io/name={{ include "svc.name" . }}
+  kubectl -n {{ .Release.Namespace }} logs -l app.kubernetes.io/name={{ include "svc.name" . }} --tail=50
+
+Health endpoints (dentro do cluster):
+  curl http://{{ include "svc.fullname" . }}:{{ .Values.service.port }}{{ .Values.probes.liveness.path }}
+  curl http://{{ include "svc.fullname" . }}:{{ .Values.service.port }}{{ .Values.probes.readiness.path }}
