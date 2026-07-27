@@ -24,7 +24,7 @@ REDIS_PASSWORD = os.environ.get("REDIS_PASSWORD", None)
 APP_PORT = int(os.environ.get("APP_PORT", 5000))
 CHECK_TIMEOUT = int(os.environ.get("CHECK_TIMEOUT", 5))
 HISTORY_LIMIT = int(os.environ.get("HISTORY_LIMIT", 100))
-APP_VERSION = os.environ.get("APP_VERSION", "1.0.0")
+APP_VERSION = os.environ.get("APP_VERSION", "1.0.0-cesar")
 LOG_LEVEL = os.environ.get("LOG_LEVEL", "INFO").upper()
 LOG_FILE = os.environ.get("LOG_FILE")
 
@@ -273,6 +273,7 @@ def version():
         "version": APP_VERSION,
         "python": sys.version,
         "redis_host": REDIS_HOST,
+        "editado_por": "Cesar Santos",
     })
 
 
