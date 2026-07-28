@@ -174,4 +174,5 @@ Poste no canal da turma com a tag `#cap-03-entrega`.
 
 ## Próximo passo
 
-No **Capítulo 4** você sai do anonimato: cria um usuário de serviço chamado `giropops`, organiza grupos, aplica `chmod`/`chown` na estrutura, restringe o `.env` com 0600 e fecha o SSH. É o capítulo em que o servidor para de ser "tudo aberto para todo mundo".
+No **Capítulo 4** você sai do anonimato: cria um usuário de serviço chamado `giropops`, organiza grupos, aplica `chmod`/`chown` na estrutura, restringe o `.env` com 0600 e fecha o SSH. É o capítulo em que o servidor para de ser "tudo aberto para todo mundo".  
+
