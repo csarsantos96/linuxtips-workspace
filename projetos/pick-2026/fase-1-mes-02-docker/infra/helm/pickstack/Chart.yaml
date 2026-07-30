@@ -1,0 +1,54 @@
+apiVersion: v2
+name: pickstack
+description: Umbrella chart do PICKStack — agrega datastores (bitnami) e os charts dos microsserviços.
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+keywords:
+  - pickstack
+  - linuxtips
+  - pick2026
+maintainers:
+  - name: LINUXtips
+    url: https://linuxtips.io
+
+dependencies:
+  # ---- Datastores: charts oficiais Bitnami ----
+  - name: postgresql
+    version: "15.5.20"
+    repository: https://charts.bitnami.com/bitnami
+    condition: postgresql.enabled
+  - name: redis
+    version: "20.0.5"
+    repository: https://charts.bitnami.com/bitnami
+    condition: redis.enabled
+  - name: nats
+    version: "1.2.2"
+    repository: https://charts.bitnami.com/bitnami
+    condition: nats.enabled
+
+  # ---- Microsserviços PICKStack ----
+  - name: auth-svc
+    version: "0.1.0"
+    repository: "file://../charts/auth-svc"
+    condition: auth-svc.enabled
+  - name: api-gateway
+    version: "0.1.0"
+    repository: "file://../charts/api-gateway"
+    condition: api-gateway.enabled
+  - name: focus-svc
+    version: "0.1.0"
+    repository: "file://../charts/focus-svc"
+    condition: focus-svc.enabled
+  - name: cards-svc
+    version: "0.1.0"
+    repository: "file://../charts/cards-svc"
+    condition: cards-svc.enabled
+  - name: trilha-svc
+    version: "0.1.0"
+    repository: "file://../charts/trilha-svc"
+    condition: trilha-svc.enabled
+  - name: web
+    version: "0.1.0"
+    repository: "file://../charts/web"
+    condition: web.enabled

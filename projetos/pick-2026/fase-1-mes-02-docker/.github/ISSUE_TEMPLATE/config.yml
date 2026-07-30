@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Canal da turma (Discord/Slack)
+    url: https://linuxtips.io
+    about: Para dúvidas em tempo real durante o PICK, use o canal da turma. Issues aqui são para trabalho rastreável (bugs, features, runbooks, módulos novos).

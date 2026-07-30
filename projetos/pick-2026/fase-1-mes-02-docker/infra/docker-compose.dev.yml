@@ -1,0 +1,238 @@
+# PICKStack — stack de desenvolvimento local.
+#
+# Profiles:
+#   --profile infra      → só datastores (postgres, redis, nats, minio)
+#   --profile services   → datastores + 5 microsserviços
+#   --profile web        → datastores + serviços + frontend SvelteKit
+#
+# Exemplos:
+#   docker compose -f infra/docker-compose.dev.yml --profile infra up -d
+#   docker compose -f infra/docker-compose.dev.yml --profile services up -d --build
+#   docker compose -f infra/docker-compose.dev.yml --profile web up -d --build
+#
+# Variáveis em infra/.env.dev (copie de .env.dev.example).
+
+name: pickstack
+
+networks:
+  pickstack-net:
+    driver: bridge
+
+volumes:
+  pickstack-postgres-data:
+  pickstack-redis-data:
+  pickstack-nats-data:
+  pickstack-minio-data:
+
+x-svc-env: &svc-env
+  LOG_LEVEL: ${LOG_LEVEL:-debug}
+  LOG_FORMAT: ${LOG_FORMAT:-json}
+  DEFAULT_TENANT_ID: ${DEFAULT_TENANT_ID:-local-dev}
+  DATABASE_URL: "postgres://${POSTGRES_USER:-pickstack}:${POSTGRES_PASSWORD:-pickstack-dev}@postgres:5432/${POSTGRES_DB:-pickstack}"
+  REDIS_URL: "redis://redis:6379"
+  NATS_URL: "nats://nats:4222"
+  MINIO_ENDPOINT: "minio:9000"
+  MINIO_ACCESS_KEY: ${MINIO_ROOT_USER:-pickstack}
+  MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-pickstack-dev}
+  JWT_ISSUER: ${JWT_ISSUER:-pickstack-local}
+  JWT_AUDIENCE: ${JWT_AUDIENCE:-pickstack}
+
+services:
+  # ---------------------------------------------------------------------------
+  # Datastores
+  # ---------------------------------------------------------------------------
+  postgres:
+    image: postgres:16-alpine
+    container_name: pickstack-postgres
+    profiles: ["infra", "services", "web"]
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-pickstack}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-pickstack-dev}
+      POSTGRES_DB: ${POSTGRES_DB:-pickstack}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - pickstack-postgres-data:/var/lib/postgresql/data
+      - ./docker/postgres-init.sql:/docker-entrypoint-initdb.d/01-schemas.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-pickstack} -d ${POSTGRES_DB:-pickstack}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks: [pickstack-net]
+
+  redis:
+    image: redis:7-alpine
+    container_name: pickstack-redis
+    profiles: ["infra", "services", "web"]
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - pickstack-redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks: [pickstack-net]
+
+  nats:
+    image: nats:2.10-alpine
+    container_name: pickstack-nats
+    profiles: ["infra", "services", "web"]
+    command:
+      - "-js"
+      - "-m"
+      - "8222"
+      - "--store_dir"
+      - "/data"
+    ports:
+      - "${NATS_CLIENT_PORT:-4222}:4222"
+      - "${NATS_MONITORING_PORT:-8222}:8222"
+    volumes:
+      - pickstack-nats-data:/data
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "-", "http://localhost:8222/healthz"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks: [pickstack-net]
+
+  minio:
+    image: minio/minio:latest
+    container_name: pickstack-minio
+    profiles: ["infra", "services", "web"]
+    command: ["server", "/data", "--console-address", ":9001"]
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-pickstack}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-pickstack-dev}
+    ports:
+      - "${MINIO_API_PORT:-9000}:9000"
+      - "${MINIO_CONSOLE_PORT:-9001}:9001"
+    volumes:
+      - pickstack-minio-data:/data
+    networks: [pickstack-net]
+
+  # ---------------------------------------------------------------------------
+  # Microsserviços (placeholders — Dockerfiles ainda em construção)
+  # ---------------------------------------------------------------------------
+  auth-svc:
+    build:
+      context: ../services/auth-svc
+    image: ghcr.io/linuxtips/pickstack-auth-svc:0.1.0
+    container_name: pickstack-auth-svc
+    profiles: ["services", "web"]
+    environment:
+      <<: *svc-env
+      SERVICE_NAME: auth-svc
+      PG_SCHEMA: auth
+      PORT: "8081"
+    ports:
+      - "${AUTH_SVC_PORT:-8081}:8081"
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis:    { condition: service_healthy }
+      nats:     { condition: service_healthy }
+    networks: [pickstack-net]
+
+  focus-svc:
+    build:
+      context: ../services/focus-svc
+    image: ghcr.io/linuxtips/pickstack-focus-svc:0.1.0
+    container_name: pickstack-focus-svc
+    profiles: ["services", "web"]
+    environment:
+      <<: *svc-env
+      SERVICE_NAME: focus-svc
+      PG_SCHEMA: focus
+      PORT: "8082"
+    ports:
+      - "${FOCUS_SVC_PORT:-8082}:8082"
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis:    { condition: service_healthy }
+      nats:     { condition: service_healthy }
+      auth-svc: { condition: service_started }
+    networks: [pickstack-net]
+
+  cards-svc:
+    build:
+      context: ../services/cards-svc
+    image: ghcr.io/linuxtips/pickstack-cards-svc:0.1.0
+    container_name: pickstack-cards-svc
+    profiles: ["services", "web"]
+    environment:
+      <<: *svc-env
+      SERVICE_NAME: cards-svc
+      PG_SCHEMA: cards
+      PORT: "8083"
+    ports:
+      - "${CARDS_SVC_PORT:-8083}:8083"
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis:    { condition: service_healthy }
+      nats:     { condition: service_healthy }
+      auth-svc: { condition: service_started }
+    networks: [pickstack-net]
+
+  trilha-svc:
+    build:
+      context: ../services/trilha-svc
+    image: ghcr.io/linuxtips/pickstack-trilha-svc:0.1.0
+    container_name: pickstack-trilha-svc
+    profiles: ["services", "web"]
+    environment:
+      <<: *svc-env
+      SERVICE_NAME: trilha-svc
+      PG_SCHEMA: trilha
+      PORT: "8084"
+    ports:
+      - "${TRILHA_SVC_PORT:-8084}:8084"
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis:    { condition: service_healthy }
+      nats:     { condition: service_healthy }
+      auth-svc: { condition: service_started }
+    networks: [pickstack-net]
+
+  api-gateway:
+    build:
+      context: ../services/api-gateway
+    image: ghcr.io/linuxtips/pickstack-api-gateway:0.1.0
+    container_name: pickstack-api-gateway
+    profiles: ["services", "web"]
+    environment:
+      <<: *svc-env
+      SERVICE_NAME: api-gateway
+      PORT: "8080"
+      AUTH_SVC_URL:   "http://auth-svc:8081"
+      FOCUS_SVC_URL:  "http://focus-svc:8082"
+      CARDS_SVC_URL:  "http://cards-svc:8083"
+      TRILHA_SVC_URL: "http://trilha-svc:8084"
+    ports:
+      - "${API_GATEWAY_PORT:-8080}:8080"
+    depends_on:
+      auth-svc:   { condition: service_started }
+      focus-svc:  { condition: service_started }
+      cards-svc:  { condition: service_started }
+      trilha-svc: { condition: service_started }
+    networks: [pickstack-net]
+
+  # ---------------------------------------------------------------------------
+  # Frontend
+  # ---------------------------------------------------------------------------
+  web:
+    build:
+      context: ../web
+    image: ghcr.io/linuxtips/pickstack-web:0.1.0
+    container_name: pickstack-web
+    profiles: ["web"]
+    environment:
+      PUBLIC_API_URL: "http://localhost:${API_GATEWAY_PORT:-8080}"
+      NODE_ENV: development
+    ports:
+      - "${WEB_PORT:-5173}:5173"
+    depends_on:
+      api-gateway: { condition: service_started }
+    networks: [pickstack-net]

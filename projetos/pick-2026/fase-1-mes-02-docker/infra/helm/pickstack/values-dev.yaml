@@ -1,0 +1,118 @@
+# PICKStack — overrides para ambiente de desenvolvimento.
+#
+# Carregue após values.yaml:
+#   helm upgrade --install pickstack infra/helm/pickstack \
+#     -n pickstack \
+#     -f infra/helm/pickstack/values-dev.yaml
+#
+# Notas:
+#   - Tudo com 1 réplica. Recursos baixos. Sem alta disponibilidade.
+#   - Ingress habilitado em pickstack.local / api.pickstack.local (nginx).
+#     Edite seu /etc/hosts para apontar pra 127.0.0.1.
+#   - Credenciais default (pickstack-dev) — NÃO USAR EM PRODUÇÃO.
+
+# ---------------------------------------------------------------------------
+# Datastores
+# ---------------------------------------------------------------------------
+
+postgresql:
+  primary:
+    persistence:
+      size: 2Gi
+    resources:
+      requests:
+        cpu: 50m
+        memory: 128Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+
+redis:
+  master:
+    persistence:
+      size: 1Gi
+    resources:
+      requests:
+        cpu: 20m
+        memory: 64Mi
+      limits:
+        cpu: 200m
+        memory: 256Mi
+
+nats:
+  cluster:
+    enabled: false
+    replicas: 1
+  jetstream:
+    enabled: true
+    fileStore:
+      pvc:
+        size: 1Gi
+  resources:
+    requests:
+      cpu: 20m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
+
+# ---------------------------------------------------------------------------
+# Microsserviços — 1 réplica + recursos reduzidos
+# ---------------------------------------------------------------------------
+
+auth-svc:
+  replicaCount: 1
+  resources:
+    requests: { cpu: 50m, memory: 128Mi }
+    limits:   { cpu: 300m, memory: 256Mi }
+
+api-gateway:
+  replicaCount: 1
+  resources:
+    requests: { cpu: 50m, memory: 128Mi }
+    limits:   { cpu: 300m, memory: 256Mi }
+  ingress:
+    enabled: true
+    className: nginx
+    annotations:
+      nginx.ingress.kubernetes.io/proxy-body-size: "10m"
+    hosts:
+      - host: api.pickstack.local
+        paths:
+          - path: /
+            pathType: Prefix
+    tls: []
+
+focus-svc:
+  replicaCount: 1
+  resources:
+    requests: { cpu: 50m, memory: 128Mi }
+    limits:   { cpu: 300m, memory: 256Mi }
+
+cards-svc:
+  replicaCount: 1
+  resources:
+    requests: { cpu: 50m, memory: 128Mi }
+    limits:   { cpu: 300m, memory: 256Mi }
+
+trilha-svc:
+  replicaCount: 1
+  resources:
+    requests: { cpu: 50m, memory: 128Mi }
+    limits:   { cpu: 300m, memory: 256Mi }
+
+web:
+  replicaCount: 1
+  resources:
+    requests: { cpu: 50m, memory: 128Mi }
+    limits:   { cpu: 300m, memory: 256Mi }
+  ingress:
+    enabled: true
+    className: nginx
+    annotations: {}
+    hosts:
+      - host: pickstack.local
+        paths:
+          - path: /
+            pathType: Prefix
+    tls: []

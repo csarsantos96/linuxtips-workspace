@@ -1,0 +1,275 @@
+# PICKStack umbrella — valores default (compartilhados entre ambientes).
+#
+# Sobrescreva por ambiente em values-dev.yaml / values-prod.yaml.
+# Em produção, NUNCA use credenciais default deste arquivo — passe via Secret
+# externo (SealedSecrets, External Secrets Operator) ou --set/--set-file.
+#
+# Convenções:
+#   - Imagens: ghcr.io/linuxtips/pickstack-<svc>:<tag>
+#   - Cada svc expõe /healthz (liveness) e /readyz (readiness)
+#   - PostgreSQL: 1 cluster compartilhado, 1 schema por serviço
+#                 (auth | focus | cards | trilha)
+
+global:
+  imageRegistry: ghcr.io/linuxtips
+  imageTag: "0.1.0"
+  imagePullPolicy: IfNotPresent
+  tenantDefault: local-dev
+
+# ---------------------------------------------------------------------------
+# Datastores (charts oficiais Bitnami)
+# ---------------------------------------------------------------------------
+
+postgresql:
+  enabled: true
+  architecture: standalone
+  auth:
+    username: pickstack
+    password: pickstack-dev   # ALTERE EM PRODUÇÃO — use secret externo.
+    database: pickstack
+    # Senha do superusuário postgres (idem — só para dev).
+    postgresPassword: pickstack-dev
+  primary:
+    persistence:
+      enabled: true
+      size: 8Gi
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: 1000m
+        memory: 1Gi
+    # Cria 1 schema por serviço no primeiro boot.
+    # Idempotente — se o PVC já tiver dado, esses scripts NÃO rodam de novo.
+    initdb:
+      scripts:
+        01-schemas.sql: |
+          CREATE SCHEMA IF NOT EXISTS auth   AUTHORIZATION pickstack;
+          CREATE SCHEMA IF NOT EXISTS focus  AUTHORIZATION pickstack;
+          CREATE SCHEMA IF NOT EXISTS cards  AUTHORIZATION pickstack;
+          CREATE SCHEMA IF NOT EXISTS trilha AUTHORIZATION pickstack;
+          CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+          CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+          CREATE EXTENSION IF NOT EXISTS "citext";
+          GRANT ALL PRIVILEGES ON SCHEMA auth, focus, cards, trilha TO pickstack;
+
+redis:
+  enabled: true
+  architecture: standalone
+  auth:
+    enabled: false   # ALTERE EM PRODUÇÃO — habilite auth e use senha forte.
+  master:
+    persistence:
+      enabled: true
+      size: 4Gi
+    resources:
+      requests:
+        cpu: 50m
+        memory: 128Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+  replica:
+    replicaCount: 0
+
+nats:
+  enabled: true
+  cluster:
+    enabled: false
+    replicas: 1
+  jetstream:
+    enabled: true
+    fileStore:
+      enabled: true
+      pvc:
+        enabled: true
+        size: 4Gi
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+# ---------------------------------------------------------------------------
+# Microsserviços PICKStack
+# ---------------------------------------------------------------------------
+
+auth-svc:
+  enabled: true
+  replicaCount: 2
+  image:
+    repository: ghcr.io/linuxtips/pickstack-auth-svc
+    tag: "0.1.0"
+    pullPolicy: IfNotPresent
+  service:
+    type: ClusterIP
+    port: 8081
+    targetPort: 8081
+  probes:
+    liveness:
+      path: /healthz
+      initialDelaySeconds: 10
+      periodSeconds: 15
+    readiness:
+      path: /readyz
+      initialDelaySeconds: 5
+      periodSeconds: 10
+  config:
+    serviceName: auth-svc
+    pgSchema: auth
+    logLevel: info
+    logFormat: json
+  # O secret abaixo é criado fora do chart (scripts/bootstrap-kind.sh cria
+  # `pickstack-credentials` no namespace). Cada serviço aponta para esse
+  # mesmo secret — em prod, prefira 1 secret por serviço, gerenciado por ESO.
+  secretRef:
+    name: pickstack-credentials
+
+api-gateway:
+  enabled: true
+  replicaCount: 2
+  image:
+    repository: ghcr.io/linuxtips/pickstack-api-gateway
+    tag: "0.1.0"
+    pullPolicy: IfNotPresent
+  service:
+    type: ClusterIP
+    port: 8080
+    targetPort: 8080
+  probes:
+    liveness:
+      path: /healthz
+      initialDelaySeconds: 10
+      periodSeconds: 15
+    readiness:
+      path: /readyz
+      initialDelaySeconds: 5
+      periodSeconds: 10
+  config:
+    serviceName: api-gateway
+    logLevel: info
+    logFormat: json
+    authSvcUrl:   "http://pickstack-auth-svc:8081"
+    focusSvcUrl:  "http://pickstack-focus-svc:8082"
+    cardsSvcUrl:  "http://pickstack-cards-svc:8083"
+    trilhaSvcUrl: "http://pickstack-trilha-svc:8084"
+  secretRef:
+    name: pickstack-credentials
+  ingress:
+    enabled: false
+
+focus-svc:
+  enabled: true
+  replicaCount: 2
+  image:
+    repository: ghcr.io/linuxtips/pickstack-focus-svc
+    tag: "0.1.0"
+    pullPolicy: IfNotPresent
+  service:
+    type: ClusterIP
+    port: 8082
+    targetPort: 8082
+  probes:
+    liveness:
+      path: /healthz
+      initialDelaySeconds: 10
+      periodSeconds: 15
+    readiness:
+      path: /readyz
+      initialDelaySeconds: 5
+      periodSeconds: 10
+  config:
+    serviceName: focus-svc
+    pgSchema: focus
+    logLevel: info
+    logFormat: json
+  secretRef:
+    name: pickstack-credentials
+
+cards-svc:
+  enabled: true
+  replicaCount: 2
+  image:
+    repository: ghcr.io/linuxtips/pickstack-cards-svc
+    tag: "0.1.0"
+    pullPolicy: IfNotPresent
+  service:
+    type: ClusterIP
+    port: 8083
+    targetPort: 8083
+  probes:
+    liveness:
+      path: /healthz
+      initialDelaySeconds: 10
+      periodSeconds: 15
+    readiness:
+      path: /readyz
+      initialDelaySeconds: 5
+      periodSeconds: 10
+  config:
+    serviceName: cards-svc
+    pgSchema: cards
+    logLevel: info
+    logFormat: json
+  secretRef:
+    name: pickstack-credentials
+
+trilha-svc:
+  enabled: true
+  replicaCount: 2
+  image:
+    repository: ghcr.io/linuxtips/pickstack-trilha-svc
+    tag: "0.1.0"
+    pullPolicy: IfNotPresent
+  service:
+    type: ClusterIP
+    port: 8084
+    targetPort: 8084
+  probes:
+    liveness:
+      path: /healthz
+      initialDelaySeconds: 10
+      periodSeconds: 15
+    readiness:
+      path: /readyz
+      initialDelaySeconds: 5
+      periodSeconds: 10
+  config:
+    serviceName: trilha-svc
+    pgSchema: trilha
+    logLevel: info
+    logFormat: json
+  secretRef:
+    name: pickstack-credentials
+
+web:
+  enabled: true
+  replicaCount: 2
+  image:
+    repository: ghcr.io/linuxtips/pickstack-web
+    tag: "0.1.0"
+    pullPolicy: IfNotPresent
+  service:
+    type: ClusterIP
+    port: 80
+    targetPort: 5173
+  probes:
+    liveness:
+      path: /healthz
+      initialDelaySeconds: 10
+      periodSeconds: 15
+    readiness:
+      path: /readyz
+      initialDelaySeconds: 5
+      periodSeconds: 10
+  config:
+    serviceName: web
+    logLevel: info
+    logFormat: json
+    publicApiUrl: "http://pickstack-api-gateway:8080"
+    nodeEnv: production
+  ingress:
+    enabled: false
