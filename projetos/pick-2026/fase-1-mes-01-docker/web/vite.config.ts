@@ -1,17 +1,20 @@
-import { sveltekit } from '@sveltejs/vite-plugin-svelte';
-import { defineConfig } from 'vite';
+import { sveltekit } from '@sveltejs/kit/vite';
+import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
-	plugins: [sveltekit()],
-	server: {
-		port: 5173,
-		strictPort: false,
-		host: true
-	},
-	preview: {
-		port: 4173
-	},
-	test: {
-		include: ['src/**/*.{test,spec}.{js,ts}']
-	}
+  plugins: [sveltekit()],
+
+  server: {
+    port: 5173,
+    strictPort: false,
+    host: true
+  },
+
+  preview: {
+    port: 4173
+  },
+
+  test: {
+    include: ['src/**/*.{test,spec}.{js,ts}']
+  }
 });

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { HTMLInputAttributes } from 'svelte/elements';
 
-	type $$Props = HTMLInputAttributes & {
+	type $$Props = Omit<HTMLInputAttributes, 'id' | 'value'> & {
 		label?: string;
 		error?: string | null;
 		hint?: string;
