@@ -44,7 +44,7 @@ ENV NODE_ENV=production \
 
 # Usuário não-root + healthcheck binário.
 RUN apk add --no-cache curl tini \
- && addgroup -S app && adduser -S app -G app
+  && addgroup -S app && adduser -S app -G app
 
 COPY --from=builder --chown=app:app /app/build ./build
 COPY --from=builder --chown=app:app /app/node_modules ./node_modules

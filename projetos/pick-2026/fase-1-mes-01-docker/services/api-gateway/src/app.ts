@@ -48,8 +48,8 @@ export function createApp(): Hono {
   );
 
   // /api/auth/* — sem requireAuth (signup/login/refresh não têm token).
-  app.all("/api/auth", (c) => forward(c, Deno.env.get("AUTH_SVC_URL") ?? "", "/api/auth"));
-  app.all("/api/auth/*", (c) => forward(c, Deno.env.get("AUTH_SVC_URL") ?? "", "/api/auth"));
+  app.all("/api/auth", (c) => forward(c, Deno.env.get("AUTH_SVC_URL") ?? "", "/api"));
+  app.all("/api/auth/*", (c) => forward(c, Deno.env.get("AUTH_SVC_URL") ?? "", "/api"));
 
   // Demais módulos — exigem JWT válido.
   const protectedRoutes: [string, string][] = [
