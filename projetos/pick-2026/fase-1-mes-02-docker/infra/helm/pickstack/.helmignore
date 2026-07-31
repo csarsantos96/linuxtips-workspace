@@ -1,0 +1,21 @@
+# Padrão Helm
+.DS_Store
+.git/
+.gitignore
+.bzr/
+.hg/
+.svn/
+*.swp
+*.bak
+*.tmp
+*.orig
+*~
+.project
+.idea/
+*.tmproj
+.vscode/
+
+# Arquivos de teste / render local
+/tmp/
+rendered.yaml
+*.local.yaml

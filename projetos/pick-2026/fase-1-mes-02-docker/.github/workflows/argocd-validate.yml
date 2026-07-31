@@ -1,0 +1,74 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# PICKStack — Validação dos manifestos ArgoCD
+#
+# O que faz:
+#   - Roda yaml-lint nos Application/AppProject YAMLs.
+#   - Roda `kubectl apply --dry-run=client` nos Applications. Como o CRD do
+#     ArgoCD não está instalado no cluster do runner, usamos --validate=false
+#     para verificar apenas o parsing/estrutura básica.
+#
+# O que ensina ao aluno do PICK:
+#   - Por que CRD-aware validation precisa do schema do ArgoCD presente.
+#   - Diferença entre client-side e server-side dry-run.
+#   - Sanity check barato antes de o ArgoCD reclamar em produção.
+#
+# Roadmap:
+#   - Trocar por kubeconform com schemas do ArgoCD (mais robusto).
+#   - Validar sync-waves coerentes via script custom.
+# ─────────────────────────────────────────────────────────────────────────────
+
+name: argocd-validate
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "infra/argocd/**"
+      - ".github/workflows/argocd-validate.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: argocd-validate-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: yaml-lint + kubectl dry-run
+    runs-on: ubuntu-latest
+    env:
+      ARGO_DIR: infra/argocd
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python (para yamllint)
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install yamllint
+        run: pip install --no-cache-dir yamllint==1.35.1
+
+      - name: yamllint
+        run: |
+          yamllint -d "{extends: default, rules: {line-length: {max: 160}, document-start: disable, truthy: {check-keys: false}}}" \
+            "${ARGO_DIR}"
+
+      - name: Setup kubectl
+        uses: azure/setup-kubectl@v4
+        with:
+          version: v1.30.4
+
+      - name: kubectl dry-run (Applications)
+        run: |
+          set -euo pipefail
+          # --validate=false porque o schema do CRD do ArgoCD não está presente
+          # no runner. Estamos verificando o YAML, não o conteúdo do spec.
+          for f in "${ARGO_DIR}"/app-of-apps.yaml "${ARGO_DIR}"/applications/*.yaml; do
+            echo "::group::dry-run ${f}"
+            kubectl apply --dry-run=client --validate=false -f "${f}"
+            echo "::endgroup::"
+          done

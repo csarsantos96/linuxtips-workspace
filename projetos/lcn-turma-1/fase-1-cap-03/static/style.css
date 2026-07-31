@@ -1,0 +1,258 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: #0d1117;
+    color: #e6edf3;
+    min-height: 100vh;
+}
+
+.container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 2rem 1rem;
+}
+
+header {
+    text-align: center;
+    margin-bottom: 2rem;
+    position: relative;
+}
+
+header h1 {
+    font-size: 2rem;
+    color: #58a6ff;
+    margin-bottom: 0.3rem;
+}
+
+.subtitle {
+    color: #8b949e;
+    font-size: 1rem;
+}
+
+.version {
+    position: absolute;
+    top: 0;
+    right: 0;
+    color: #484f58;
+    font-size: 0.8rem;
+}
+
+.controls {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    margin-bottom: 1.5rem;
+}
+
+button {
+    background: #21262d;
+    color: #e6edf3;
+    border: 1px solid #30363d;
+    padding: 0.6rem 1.2rem;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: background 0.2s;
+}
+
+button:hover {
+    background: #30363d;
+}
+
+button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+#btn-check {
+    background: #238636;
+    border-color: #2ea043;
+}
+
+#btn-check:hover {
+    background: #2ea043;
+}
+
+.add-form {
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 8px;
+    padding: 1.2rem;
+    margin-bottom: 1.5rem;
+    display: flex;
+    gap: 0.8rem;
+    flex-wrap: wrap;
+}
+
+.add-form input {
+    flex: 1;
+    min-width: 200px;
+    background: #0d1117;
+    border: 1px solid #30363d;
+    color: #e6edf3;
+    padding: 0.6rem 0.8rem;
+    border-radius: 6px;
+    font-size: 0.9rem;
+}
+
+.add-form input:focus {
+    outline: none;
+    border-color: #58a6ff;
+}
+
+.add-form button {
+    background: #238636;
+    border-color: #2ea043;
+}
+
+.btn-cancel {
+    background: #21262d !important;
+    border-color: #30363d !important;
+}
+
+.hidden {
+    display: none !important;
+}
+
+.services-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+}
+
+.service-card {
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 8px;
+    padding: 1rem 1.2rem;
+    border-left: 4px solid #484f58;
+    transition: border-color 0.3s;
+}
+
+.service-card.status-up {
+    border-left-color: #2ea043;
+}
+
+.service-card.status-down {
+    border-left-color: #f85149;
+}
+
+.service-card.status-unknown {
+    border-left-color: #d29922;
+}
+
+.service-header {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    margin-bottom: 0.5rem;
+}
+
+.service-header h3 {
+    flex: 1;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.status-badge {
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 0.2rem 0.6rem;
+    border-radius: 20px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.status-badge.up {
+    background: rgba(46, 160, 67, 0.2);
+    color: #3fb950;
+}
+
+.status-badge.down {
+    background: rgba(248, 81, 73, 0.2);
+    color: #f85149;
+}
+
+.status-badge.unknown {
+    background: rgba(210, 153, 34, 0.2);
+    color: #d29922;
+}
+
+.btn-delete {
+    background: transparent;
+    border: none;
+    color: #484f58;
+    font-size: 1rem;
+    padding: 0.2rem 0.5rem;
+    cursor: pointer;
+}
+
+.btn-delete:hover {
+    color: #f85149;
+}
+
+.service-url {
+    color: #8b949e;
+    font-size: 0.85rem;
+    margin-bottom: 0.5rem;
+    word-break: break-all;
+}
+
+.service-metrics {
+    display: flex;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+}
+
+.metric {
+    display: flex;
+    flex-direction: column;
+    font-size: 0.8rem;
+}
+
+.metric strong {
+    color: #e6edf3;
+}
+
+.metric small {
+    color: #484f58;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 3rem;
+    color: #8b949e;
+}
+
+.empty-state p {
+    margin-bottom: 0.5rem;
+}
+
+footer {
+    text-align: center;
+    margin-top: 3rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid #21262d;
+    color: #484f58;
+    font-size: 0.85rem;
+}
+
+@media (max-width: 600px) {
+    .controls {
+        flex-direction: column;
+    }
+
+    .add-form {
+        flex-direction: column;
+    }
+
+    .service-metrics {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+}
