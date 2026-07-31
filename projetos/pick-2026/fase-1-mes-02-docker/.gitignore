@@ -46,3 +46,5 @@ nats-data/
 # Sibling repos (referência local apenas)
 mesa/
 giropops-status/
+
+core*
