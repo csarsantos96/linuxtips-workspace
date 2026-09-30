@@ -232,7 +232,7 @@ services:
       PUBLIC_API_URL: "http://localhost:${API_GATEWAY_PORT:-8080}"
       NODE_ENV: development
     ports:
-      - "${WEB_PORT:-5173}:5173"
+      - "${WEB_PORT:-5173}:3000"
     depends_on:
       api-gateway: { condition: service_started }
     networks: [pickstack-net]
