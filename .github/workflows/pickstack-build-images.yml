@@ -1,0 +1,156 @@
+name: PICKStack - Build, Sign and SBOM
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "projetos/pick-2026/fase-1-mes-03-docker/**"
+      - ".github/workflows/pickstack-build-images.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+  id-token: write
+
+concurrency:
+  group: pickstack-images-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  PROJECT_DIR: projetos/pick-2026/fase-1-mes-03-docker
+
+jobs:
+  build:
+    name: Build and sign ${{ matrix.svc }}
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - svc: auth-svc
+            context: services/auth-svc
+          - svc: api-gateway
+            context: services/api-gateway
+          - svc: focus-svc
+            context: services/focus-svc
+          - svc: cards-svc
+            context: services/cards-svc
+          - svc: trilha-svc
+            context: services/trilha-svc
+          - svc: web
+            context: web
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Define image name
+        id: image
+        shell: bash
+        env:
+          OWNER: ${{ github.repository_owner }}
+          SERVICE: ${{ matrix.svc }}
+        run: |
+          echo "name=ghcr.io/${OWNER,,}/pickstack-${SERVICE}" >> "$GITHUB_OUTPUT"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Generate tags and labels
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ steps.image.outputs.name }}
+          tags: |
+            type=ref,event=branch
+            type=sha,format=short,prefix=sha-
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+          labels: |
+            org.opencontainers.image.title=pickstack-${{ matrix.svc }}
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+
+      - name: Build and push
+        id: build
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ env.PROJECT_DIR }}/${{ matrix.context }}
+          file: ${{ env.PROJECT_DIR }}/${{ matrix.context }}/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          platforms: linux/amd64
+          provenance: true
+          sbom: true
+          cache-from: type=gha,scope=pickstack-${{ matrix.svc }}
+          cache-to: type=gha,scope=pickstack-${{ matrix.svc }},mode=max
+
+      - name: Install Cosign
+        uses: sigstore/cosign-installer@v3
+
+      - name: Sign image
+        shell: bash
+        env:
+          IMAGE: ${{ steps.image.outputs.name }}
+          DIGEST: ${{ steps.build.outputs.digest }}
+        run: |
+          cosign sign --yes "${IMAGE}@${DIGEST}"
+
+      - name: Verify image signature
+        shell: bash
+        env:
+          IMAGE: ${{ steps.image.outputs.name }}
+          DIGEST: ${{ steps.build.outputs.digest }}
+          IDENTITY: https://github.com/${{ github.repository }}/.github/workflows/pickstack-build-images.yml@${{ github.ref }}
+        run: |
+          mkdir -p evidence
+          set -o pipefail
+
+          cosign verify \
+            --certificate-identity "$IDENTITY" \
+            --certificate-oidc-issuer "https://token.actions.githubusercontent.com" \
+            "${IMAGE}@${DIGEST}" \
+            | tee evidence/cosign-verification.json
+
+          printf '%s@%s\n' "$IMAGE" "$DIGEST" > evidence/image.txt
+
+      - name: Generate downloadable SBOM
+        uses: anchore/sbom-action@v0
+        with:
+          image: ${{ steps.image.outputs.name }}@${{ steps.build.outputs.digest }}
+          registry-username: ${{ github.actor }}
+          registry-password: ${{ secrets.GITHUB_TOKEN }}
+          format: spdx-json
+          output-file: evidence/sbom.spdx.json
+          upload-artifact: false
+          upload-release-assets: false
+          dependency-snapshot: false
+
+      - name: Upload delivery evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: evidence-${{ matrix.svc }}
+          path: evidence/
+          if-no-files-found: error
+
+      - name: Write job summary
+        shell: bash
+        env:
+          IMAGE: ${{ steps.image.outputs.name }}
+          DIGEST: ${{ steps.build.outputs.digest }}
+          SERVICE: ${{ matrix.svc }}
+        run: |
+          {
+            echo "### ${SERVICE}"
+            echo "- Published image: \`${IMAGE}@${DIGEST}\`"
+            echo "- Cosign signature verified successfully"
+            echo "- SPDX SBOM available in artifact: evidence-${SERVICE}"
+          } >> "$GITHUB_STEP_SUMMARY"
