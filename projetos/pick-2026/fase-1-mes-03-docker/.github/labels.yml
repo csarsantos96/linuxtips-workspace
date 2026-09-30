@@ -1,0 +1,105 @@
+# Configuração de labels do repositório.
+# Pode ser aplicada por github-label-sync ou similar.
+#
+# Categorias:
+#   - kind/*    — tipo de mudança
+#   - mes-NN-*  — em que mês do PICK 2026 essa issue se encaixa
+#   - area/*    — área do código
+#   - status/*  — workflow
+
+# === Kind ===
+- name: bug
+  color: d73a4a
+  description: Algo não está funcionando
+- name: good first issue
+  color: 7057ff
+  description: Boa primeira issue pra começar
+- name: enhancement
+  color: a2eeef
+  description: Nova feature ou pedido
+- name: module-proposal
+  color: 5319e7
+  description: Proposta de módulo novo (cap MODULE-CONTRACT)
+- name: runbook
+  color: 0e8a16
+  description: Documentação operacional / cenário de incidente
+- name: documentation
+  color: 0075ca
+  description: Melhorias ou correções na documentação
+- name: question
+  color: d876e3
+  description: Discussão / dúvida
+
+# === Mês PICK ===
+- name: mes-01-docker
+  color: fbca04
+  description: Fundamentos de Docker (containers, imagens, networks)
+- name: mes-02-docker
+  color: fbca04
+  description: Docker avançado (multi-stage, scanning, distroless)
+- name: mes-03-docker
+  color: fbca04
+  description: Docker em produção (registry, signing, supply chain)
+- name: mes-04-k8s
+  color: 1d76db
+  description: Kubernetes workloads (deployments, services)
+- name: mes-05-k8s
+  color: 1d76db
+  description: Kubernetes networking (ingress, NetworkPolicy)
+- name: mes-06-k8s
+  color: 1d76db
+  description: Kubernetes config & state (ConfigMap, Secret, StatefulSet, PVC)
+- name: mes-07-cka
+  color: bfd4f2
+  description: Cluster ops, troubleshooting, etcd
+- name: mes-08-ckad
+  color: bfd4f2
+  description: App deployment (Helm, probes, jobs)
+- name: mes-09-observability
+  color: c5def5
+  description: Prometheus, Grafana, Loki, Tempo, SLO
+- name: mes-10-argocd
+  color: 5319e7
+  description: GitOps com ArgoCD (app-of-apps, sync waves, image updater)
+- name: mes-11-modulo
+  color: 0e8a16
+  description: Módulo novo ou operação com SLO
+- name: mes-12-final
+  color: 5319e7
+  description: Projeto final / demonstração
+
+# === Área ===
+- name: area/auth
+  color: ededed
+- name: area/gateway
+  color: ededed
+- name: area/focus
+  color: ededed
+- name: area/cards
+  color: ededed
+- name: area/trilha
+  color: ededed
+- name: area/web
+  color: ededed
+- name: area/infra
+  color: ededed
+- name: area/docs
+  color: ededed
+
+# === Status ===
+- name: status/needs-discussion
+  color: fef2c0
+  description: Esperando consenso antes de implementar
+- name: status/in-progress
+  color: fbca04
+  description: Alguém pegou e está trabalhando
+- name: status/blocked
+  color: e11d21
+  description: Aguardando outra coisa ser resolvida
+- name: status/ready-for-review
+  color: 0e8a16
+
+# === Bandeira PICK ===
+- name: pick-2026
+  color: ff9f1c
+  description: Turma do PICK 2026

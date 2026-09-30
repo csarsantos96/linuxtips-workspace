@@ -1,0 +1,94 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# PICKStack — Dependabot
+#
+# Configuração pedagógica: mostra ao aluno como cobrir todas as fontes de
+# dependência do monorepo. Frequência semanal para reduzir ruído no PICK.
+# Em produção real, considere `daily` para segurança.
+# ─────────────────────────────────────────────────────────────────────────────
+
+version: 2
+updates:
+  # ── GitHub Actions ────────────────────────────────────────────────────────
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    labels:
+      - dependencies
+      - github-actions
+    commit-message:
+      prefix: "ci"
+
+  # ── Frontend SvelteKit (npm/pnpm) ─────────────────────────────────────────
+  - package-ecosystem: npm
+    directory: /web
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    labels:
+      - dependencies
+      - web
+    commit-message:
+      prefix: "chore(web)"
+    groups:
+      sveltekit:
+        patterns:
+          - "@sveltejs/*"
+          - "svelte"
+          - "svelte-*"
+          - "vite"
+
+  # ── Microsserviços Deno ───────────────────────────────────────────────────
+  # Dependabot ainda tem suporte limitado para deno.json puro; usamos
+  # ecossistema "npm" desligado nas pastas de serviço (são gerenciadas via
+  # JSR/npm specifiers dentro do Deno). Atualize manualmente ou use Renovate
+  # para Deno-nativo. Mantemos a entrada documentada como TODO pedagógico.
+  #
+  # - package-ecosystem: deno
+  #   directory: /services/auth-svc
+  #   schedule: { interval: weekly }
+  # (Repita para os demais serviços quando o ecosystem "deno" for GA no
+  # Dependabot — ou troque por Renovate.)
+
+  # ── Dockerfiles ───────────────────────────────────────────────────────────
+  - package-ecosystem: docker
+    directory: /services/auth-svc
+    schedule:
+      interval: weekly
+    labels: [dependencies, docker]
+    commit-message: { prefix: "chore(auth-svc)" }
+
+  - package-ecosystem: docker
+    directory: /services/api-gateway
+    schedule:
+      interval: weekly
+    labels: [dependencies, docker]
+    commit-message: { prefix: "chore(api-gateway)" }
+
+  - package-ecosystem: docker
+    directory: /services/focus-svc
+    schedule:
+      interval: weekly
+    labels: [dependencies, docker]
+    commit-message: { prefix: "chore(focus-svc)" }
+
+  - package-ecosystem: docker
+    directory: /services/cards-svc
+    schedule:
+      interval: weekly
+    labels: [dependencies, docker]
+    commit-message: { prefix: "chore(cards-svc)" }
+
+  - package-ecosystem: docker
+    directory: /services/trilha-svc
+    schedule:
+      interval: weekly
+    labels: [dependencies, docker]
+    commit-message: { prefix: "chore(trilha-svc)" }
+
+  - package-ecosystem: docker
+    directory: /web
+    schedule:
+      interval: weekly
+    labels: [dependencies, docker]
+    commit-message: { prefix: "chore(web)" }

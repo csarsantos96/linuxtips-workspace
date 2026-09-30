@@ -1,0 +1,7 @@
+apiVersion: v2
+name: web
+description: PICKStack — frontend SvelteKit (SSR opcional).
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+keywords: [pickstack, web, sveltekit]

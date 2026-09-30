@@ -1,0 +1,39 @@
+# PICKStack — Bootstrap "app-of-apps".
+#
+# Aplique este arquivo UMA vez com:
+#   kubectl apply -n argocd -f infra/argocd/app-of-apps.yaml
+#
+# Ele cria 1 Application que aponta para infra/argocd/applications/,
+# de onde o ArgoCD descobre e sincroniza todas as outras Applications.
+#
+# Pré-requisitos:
+#   - ArgoCD instalado no namespace `argocd`
+#   - Credencial (SSH key ou PAT) configurada para o repo privado, via:
+#       * Secret tipo `repo-creds` (templated) OU
+#       * `argocd repo add` apontando para git@github.com:linuxtips/pickstack.git
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: pickstack-bootstrap
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/linuxtips/pickstack
+    targetRevision: main
+    path: infra/argocd/applications
+    directory:
+      recurse: true
+      jsonnet: {}
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ApplyOutOfSyncOnly=true

@@ -1,0 +1,35 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: infra-nats
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://charts.bitnami.com/bitnami
+    chart: nats
+    targetRevision: "1.2.2"
+    helm:
+      releaseName: pickstack-nats
+      values: |
+        jetstream:
+          enabled: true
+        cluster:
+          enabled: false
+        persistence:
+          enabled: true
+          size: 4Gi
+        resourceType: deployment
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: pickstack
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

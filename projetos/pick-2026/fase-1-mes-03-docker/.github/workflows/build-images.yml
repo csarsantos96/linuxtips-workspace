@@ -1,0 +1,110 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# PICKStack — Build & push de imagens OCI para o GHCR
+#
+# O que faz:
+#   - Constrói as 6 imagens (5 serviços Deno + web SvelteKit) em paralelo.
+#   - Tagueia conforme o evento: branch (`main`), SHA curto, semver (em tag),
+#     além de `latest` quando em `main`.
+#   - Publica no GitHub Container Registry (ghcr.io) usando GITHUB_TOKEN.
+#   - Habilita provenance e SBOM (futuro: assinar com cosign — id-token já liberado).
+#   - Usa cache de build (`type=gha`) para acelerar PRs subsequentes.
+#
+# O que ensina ao aluno do PICK:
+#   - Pipeline OCI multi-imagem com matrix.
+#   - docker/metadata-action gerando tags de forma declarativa.
+#   - GHA cache layer reuse (lições de "Descomplicando Docker").
+#   - Permissions mínimas: packages:write + contents:read + id-token:write.
+#
+# Nota de segurança da supply chain:
+#   docker/login-action e docker/build-push-action são pontos sensíveis.
+#   Em ambiente regulado, pin por SHA. Aqui usamos tag major para legibilidade.
+# ─────────────────────────────────────────────────────────────────────────────
+
+name: build-images
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+  id-token: write # reservado para futuro cosign keyless
+
+concurrency:
+  group: build-images-${{ github.ref }}
+  cancel-in-progress: false # não cancelamos builds em main
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_OWNER: ${{ github.repository_owner }}
+
+jobs:
+  build:
+    name: build ${{ matrix.svc }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - svc: auth-svc
+            context: services/auth-svc
+          - svc: api-gateway
+            context: services/api-gateway
+          - svc: focus-svc
+            context: services/focus-svc
+          - svc: cards-svc
+            context: services/cards-svc
+          - svc: trilha-svc
+            context: services/trilha-svc
+          - svc: web
+            context: web
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Setup Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login ao GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Gerar tags e labels (metadata-action)
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/pickstack-${{ matrix.svc }}
+          tags: |
+            type=ref,event=branch
+            type=sha,format=short,prefix=sha-
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=raw,value=latest,enable=${{ github.ref == format('refs/heads/{0}', 'main') }}
+          labels: |
+            org.opencontainers.image.title=pickstack-${{ matrix.svc }}
+            org.opencontainers.image.vendor=LINUXtips
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+
+      - name: Build & push
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.context }}/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          platforms: linux/amd64
+          # platforms: linux/amd64,linux/arm64  # habilitar quando runners arm forem ok
+          provenance: true
+          sbom: true
+          cache-from: type=gha,scope=${{ matrix.svc }}
+          cache-to: type=gha,scope=${{ matrix.svc }},mode=max
