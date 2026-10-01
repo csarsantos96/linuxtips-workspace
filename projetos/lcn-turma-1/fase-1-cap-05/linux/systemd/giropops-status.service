@@ -1,0 +1,93 @@
+# =============================================================================
+# giropops-status.service - unit file de producao
+# =============================================================================
+# Roda o Giropops Status como servico systemd sob o usuario de servico
+# 'giropops' (criado no cap 4). Sobrevive a crashes (Restart=on-failure) e
+# a reboots (enable --now).
+#
+# Instalacao:
+#   sudo cp linux/systemd/giropops-status.service \
+#           /etc/systemd/system/giropops-status.service
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now giropops-status
+#
+# Customizacao: use drop-in override, NUNCA edite este arquivo direto.
+#   sudo systemctl edit giropops-status
+#
+# Validacao:
+#   systemctl status giropops-status
+#   curl http://localhost:5000/health
+# =============================================================================
+
+[Unit]
+Description=Giropops Status - monitor de servicos HTTP (LINUXtips)
+Documentation=https://github.com/linuxtips/giropops-status
+# Sobe so depois que a rede esta online e o Redis (cache) ja subiu.
+# Wants= e dependencia fraca: se o Redis cair, a app degrada elegante
+# em vez de o systemd derrubar tudo junto.
+After=network-online.target redis-server.service
+Wants=network-online.target redis-server.service
+
+[Service]
+Type=simple
+
+# Usuario de servico do cap 4 (nologin, sem shell, sem home interativo).
+User=giropops
+Group=giropops
+
+# Diretorio de trabalho: e onde o Python procura app.py e arquivos
+# relativos (ex.: static/, templates/).
+WorkingDirectory=/opt/giropops-status/app
+
+# Variaveis de ambiente sensiveis (REDIS_PASSWORD, etc) ficam em .env
+# com modo 0640 e dono giropops:giropops. NUNCA hardcode segredos aqui.
+EnvironmentFile=/opt/giropops-status/config/.env
+
+# Python do virtualenv da aplicacao (criado no cap 5), nao o do sistema.
+ExecStart=/opt/giropops-status/venv/bin/python app.py
+
+# Resiliencia a falhas transitorias: se o processo morrer com exit code
+# != 0 ou for morto por sinal (kill -9), o systemd espera 5s e sobe de
+# novo. on-failure NAO reinicia quando a app sai com exit 0 (intencional).
+Restart=on-failure
+RestartSec=5
+
+# Tempo maximo pra parar (SIGTERM -> espera -> SIGKILL).
+TimeoutStopSec=10
+
+# Logs vao pro journalctl (journalctl -u giropops-status).
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=giropops-status
+
+# --- Hardening (Capitulo 4 e 5 em acao) -------------------------------------
+# Bloqueia escalacao de privilegio via setuid/setgid em filhos do processo.
+NoNewPrivileges=true
+
+# Filesystem inteiro monta como read-only para o processo, exceto os paths
+# liberados abaixo. Mesmo que a app seja comprometida, o atacante nao escreve
+# em /usr, /etc, /boot, nada.
+ProtectSystem=strict
+ProtectHome=true
+
+# Whitelist de escrita: logs e backups locais da aplicacao.
+ReadWritePaths=/opt/giropops-status/logs /opt/giropops-status/backups
+
+# /tmp e /var/tmp isolados (cada servico ve um proprio, nao compartilhado).
+PrivateTmp=true
+
+# Bloqueia acesso a /dev sensiveis (ex.: /dev/mem, /dev/kmem).
+PrivateDevices=true
+
+# Bloqueia raw sockets, packet sockets e outras families exoticas
+# (mantem AF_INET, AF_INET6, AF_UNIX que a app precisa).
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+
+# Impede o processo de carregar modulos do kernel.
+ProtectKernelModules=true
+ProtectKernelTunables=true
+ProtectControlGroups=true
+
+[Install]
+# Sobe junto com o "modo servidor multi-usuario" (default no boot).
+WantedBy=multi-user.target

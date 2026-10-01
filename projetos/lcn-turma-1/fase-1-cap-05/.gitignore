@@ -1,0 +1,36 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+.pytest_cache/
+dist/
+build/
+
+# Ambientes virtuais
+.venv/
+venv/
+
+# Ambiente local
+.env
+
+# Editores
+.vscode/
+.idea/
+*.swp
+.DS_Store
+
+# Claude Code (config local do agente)
+.claude/
+
+# Repositorio sibling do livro, usado apenas como referencia local.
+# NAO deve ser commitado nem entrar nos pacotes dos alunos.
+Descomplicando-Linux/
+
+# Logs locais
+*.log
+
+# Releases (artefatos gerados por scripts/build-releases.sh)
+releases/*.tar.gz
+releases/*.sha256
+!releases/.gitkeep

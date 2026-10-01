@@ -1,0 +1,39 @@
+" =============================================================================
+" Giropops Status - .vimrc didatico (cap 3)
+" =============================================================================
+" Copie para o seu home no servidor:
+"   cp dotfiles/vimrc.example ~/.vimrc
+"
+" Este arquivo torna o Vim usavel sem te transformar em vimer profissional.
+" Edite a vontade depois que entender cada linha.
+" =============================================================================
+
+set number          " numeros de linha
+set ruler           " posicao do cursor no rodape
+set showmode        " mostra o modo atual (INSERT, VISUAL, etc.)
+
+set tabstop=4       " tab = 4 espacos
+set shiftwidth=4    " indentacao = 4 espacos
+set expandtab       " tab vira espacos (essencial para Python)
+set autoindent      " mantem indentacao da linha anterior
+
+set hlsearch        " destaca resultados de busca
+set incsearch       " busca incremental
+set ignorecase      " busca case-insensitive
+set smartcase       " ...exceto quando usar letra maiuscula
+
+set backup          " mantem backup automatico (~/.vim/backup)
+set backupdir=~/.vim/backup//
+set undofile        " persiste o historico de undo entre sessoes
+set undodir=~/.vim/undo//
+
+syntax on           " coloracao de sintaxe
+filetype plugin indent on
+
+" Atalhos uteis
+" - aperte ',w' no modo normal para salvar
+let mapleader = ","
+nnoremap <leader>w :w<CR>
+
+" Cria os diretorios de backup/undo se nao existirem
+silent !mkdir -p ~/.vim/backup ~/.vim/undo > /dev/null 2>&1
