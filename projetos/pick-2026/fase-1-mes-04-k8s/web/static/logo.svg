@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 48" fill="none">
+	<rect width="40" height="40" x="4" y="4" rx="9" fill="#161b22" stroke="#30363d"/>
+	<path d="M14 14h12a8 8 0 0 1 0 16h-6v8h-6V14Zm6 6v4h6a2 2 0 0 0 0-4h-6Z" fill="#58a6ff"/>
+	<circle cx="34" cy="34" r="4" fill="#3fb950"/>
+	<text x="54" y="32" font-family="Inter, system-ui, sans-serif" font-size="20" font-weight="700" fill="#e6edf3">PICKStack</text>
+</svg>

@@ -1,0 +1,48 @@
+# Node / SvelteKit
+node_modules/
+.svelte-kit/
+.vite/
+build/
+dist/
+.npmrc.local
+
+# Deno
+.deno/
+deno.lock
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Env
+.env
+.env.*
+!.env.example
+!.env.dev.example
+
+# IDE
+.vscode/
+.idea/
+*.swp
+.DS_Store
+
+# Test
+coverage/
+.nyc_output/
+.pytest_cache/
+
+# Local data
+data/
+postgres-data/
+redis-data/
+nats-data/
+
+# Claude Code
+.claude/
+
+# Sibling repos (referência local apenas)
+mesa/
+giropops-status/

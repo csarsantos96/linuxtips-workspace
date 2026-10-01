@@ -1,0 +1,95 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* -------------------------------------------------------------------------- */
+/* Reset + base                                                               */
+/* -------------------------------------------------------------------------- */
+
+:root {
+	color-scheme: dark;
+	--ring-accent: #58a6ff;
+}
+
+html,
+body {
+	height: 100%;
+	font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+	font-feature-settings: 'cv11', 'ss01';
+}
+
+html:not(.dark) {
+	color-scheme: light;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Tema light (alternável via classe `.dark` no <html>)                       */
+/* -------------------------------------------------------------------------- */
+
+html:not(.dark) body {
+	background-color: #f6f8fa;
+	color: #1f2328;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Componentes utilitários                                                    */
+/* -------------------------------------------------------------------------- */
+
+@layer components {
+	.card {
+		@apply rounded-lg border border-surface-border bg-surface p-4 shadow-card;
+	}
+
+	.btn {
+		@apply inline-flex items-center justify-center gap-2 rounded-md border border-transparent
+			px-3 py-2 text-sm font-medium transition-colors
+			focus:outline-none focus-visible:ring-2 focus-visible:ring-accent
+			disabled:cursor-not-allowed disabled:opacity-60;
+	}
+
+	.btn-primary {
+		@apply bg-accent text-bg hover:bg-accent-hover;
+	}
+
+	.btn-ghost {
+		@apply border-surface-border bg-transparent text-slate-200 hover:bg-surface-hover;
+	}
+
+	.btn-danger {
+		@apply bg-danger/90 text-white hover:bg-danger;
+	}
+
+	.input {
+		@apply w-full rounded-md border border-surface-border bg-bg-sunken px-3 py-2 text-sm
+			text-slate-100 placeholder:text-muted-soft
+			focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent;
+	}
+
+	.label {
+		@apply mb-1 block text-xs font-medium uppercase tracking-wide text-muted;
+	}
+
+	.badge {
+		@apply inline-flex items-center gap-1 rounded-full border border-surface-border
+			bg-bg-soft px-2 py-0.5 text-xs font-medium text-muted;
+	}
+}
+
+/* -------------------------------------------------------------------------- */
+/* Scrollbar discreta                                                         */
+/* -------------------------------------------------------------------------- */
+
+::-webkit-scrollbar {
+	width: 10px;
+	height: 10px;
+}
+::-webkit-scrollbar-track {
+	background: transparent;
+}
+::-webkit-scrollbar-thumb {
+	background: #30363d;
+	border-radius: 6px;
+}
+::-webkit-scrollbar-thumb:hover {
+	background: #484f58;
+}

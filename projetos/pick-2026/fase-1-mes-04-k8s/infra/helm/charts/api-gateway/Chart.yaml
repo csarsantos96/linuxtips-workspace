@@ -1,0 +1,7 @@
+apiVersion: v2
+name: api-gateway
+description: PICKStack — gateway HTTP único (CORS, rate limit, JWT, roteamento por prefixo).
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+keywords: [pickstack, gateway, hono]

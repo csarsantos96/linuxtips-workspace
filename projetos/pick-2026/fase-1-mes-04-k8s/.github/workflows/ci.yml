@@ -1,0 +1,199 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# PICKStack — CI (Pull Request validation)
+#
+# O que faz:
+#   - Roda lint/format/type-check/test em cada microsserviço Deno (matrix).
+#   - Roda check + lint + build do frontend SvelteKit.
+#   - Valida os Helm charts (lint + template render).
+#   - Valida a sintaxe dos próprios workflows com actionlint.
+#
+# O que ensina ao aluno do PICK:
+#   - Jobs em paralelo + matrix strategy.
+#   - Cache de dependências por linguagem (Deno e pnpm).
+#   - Concurrency control para cancelar runs obsoletos no mesmo PR.
+#   - Smoke render de Helm — barato e pega 80% dos erros de chart.
+#
+# Nota de segurança da supply chain:
+#   As actions abaixo estão referenciadas por tag semver para legibilidade.
+#   Em ambiente regulado, troque cada `@v?` por `@<commit-sha>` (vide
+#   https://docs.github.com/actions/security-guides/security-hardening-for-github-actions).
+# ─────────────────────────────────────────────────────────────────────────────
+
+name: ci
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  # ───────────────────────────────────────────────────────────────────────────
+  # Lint + test dos microsserviços Deno
+  # ───────────────────────────────────────────────────────────────────────────
+  lint-services:
+    name: deno (${{ matrix.svc }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        svc:
+          - auth-svc
+          - api-gateway
+          - focus-svc
+          - cards-svc
+          - trilha-svc
+    env:
+      DENO_DIR: ${{ github.workspace }}/.deno-cache
+      SERVICE_DIR: services/${{ matrix.svc }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+
+      - name: Cache Deno modules
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.DENO_DIR }}
+          key: deno-${{ runner.os }}-${{ matrix.svc }}-${{ hashFiles(format('services/{0}/deno.json', matrix.svc), format('services/{0}/deno.lock', matrix.svc)) }}
+          restore-keys: |
+            deno-${{ runner.os }}-${{ matrix.svc }}-
+            deno-${{ runner.os }}-
+
+      - name: deno fmt --check
+        working-directory: ${{ env.SERVICE_DIR }}
+        run: deno fmt --check
+
+      - name: deno lint
+        working-directory: ${{ env.SERVICE_DIR }}
+        run: deno lint
+
+      - name: deno check
+        working-directory: ${{ env.SERVICE_DIR }}
+        run: deno check src/main.ts
+
+      - name: deno task test
+        working-directory: ${{ env.SERVICE_DIR }}
+        run: deno task test
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # Frontend SvelteKit
+  # ───────────────────────────────────────────────────────────────────────────
+  lint-web:
+    name: web (sveltekit)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      # NOTE: `cache: pnpm` exige pnpm-lock.yaml presente. Habilite quando
+      # comitarmos o lockfile (o que será obrigatório pós-bootstrap do MVP).
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        # Quando houver pnpm-lock.yaml comitado, use --frozen-lockfile.
+        # No bootstrap do projeto, ainda não existe lockfile — então caímos
+        # no install regular. Troque assim que rodar `pnpm install` pela 1a vez.
+        run: |
+          if [ -f pnpm-lock.yaml ]; then
+            pnpm install --frozen-lockfile
+          else
+            pnpm install --no-frozen-lockfile
+          fi
+
+      - name: svelte-check
+        run: pnpm check
+
+      - name: Lint (prettier)
+        run: pnpm run lint
+        continue-on-error: false
+
+      - name: Build (smoke)
+        run: pnpm build
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # Helm charts: lint + render smoke
+  # ───────────────────────────────────────────────────────────────────────────
+  helm-lint:
+    name: helm lint + template
+    runs-on: ubuntu-latest
+    env:
+      UMBRELLA: infra/helm/pickstack
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: v3.15.4
+
+      # As dependências externas (Bitnami) podem flutuar; toleramos falha
+      # de rede para não quebrar o PR por motivo fora do controle do aluno.
+      - name: helm dependency update (umbrella)
+        run: helm dependency update "${UMBRELLA}"
+        continue-on-error: true
+
+      - name: helm lint (umbrella)
+        run: helm lint "${UMBRELLA}"
+
+      - name: helm lint (subcharts)
+        run: |
+          set -euo pipefail
+          for chart in infra/helm/charts/*/; do
+            echo "::group::lint ${chart}"
+            helm lint "${chart}"
+            echo "::endgroup::"
+          done
+
+      - name: helm template (smoke render do umbrella)
+        run: |
+          mkdir -p /tmp/rendered
+          helm template pickstack "${UMBRELLA}" \
+            --namespace pickstack \
+            > /tmp/rendered/pickstack.yaml
+          wc -l /tmp/rendered/pickstack.yaml
+
+      - name: Upload rendered manifests
+        uses: actions/upload-artifact@v4
+        with:
+          name: helm-rendered
+          path: /tmp/rendered/pickstack.yaml
+          retention-days: 7
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # Sintaxe dos próprios workflows
+  # ───────────────────────────────────────────────────────────────────────────
+  actionlint:
+    name: actionlint (workflows)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run actionlint
+        uses: raven-actions/actionlint@v2
+        with:
+          fail-on-error: true

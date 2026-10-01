@@ -1,0 +1,16 @@
+{{ include "svc.fullname" . }} (api-gateway) instalado.
+
+Service ClusterIP: {{ include "svc.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.service.port }}
+
+{{- if .Values.ingress.enabled }}
+Ingress habilitado em:
+  {{- range .Values.ingress.hosts }}
+  - http{{ if $.Values.ingress.tls }}s{{ end }}://{{ .host }}
+  {{- end }}
+{{- else }}
+Ingress desabilitado. Para acessar localmente:
+  kubectl -n {{ .Release.Namespace }} port-forward svc/{{ include "svc.fullname" . }} 8080:{{ .Values.service.port }}
+{{- end }}
+
+Health:
+  curl http://{{ include "svc.fullname" . }}:{{ .Values.service.port }}{{ .Values.probes.liveness.path }}
