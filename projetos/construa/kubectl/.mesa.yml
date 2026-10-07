@@ -1,0 +1,3 @@
+# Projeto Construa — usado pelo CLI `mesa test`
+project: kubectl
+stage: kc-01-setup
