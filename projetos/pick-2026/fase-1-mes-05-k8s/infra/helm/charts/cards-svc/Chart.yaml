@@ -1,0 +1,7 @@
+apiVersion: v2
+name: cards-svc
+description: PICKStack — módulo cards (flashcards com spaced repetition SM-2).
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+keywords: [pickstack, cards, srs]

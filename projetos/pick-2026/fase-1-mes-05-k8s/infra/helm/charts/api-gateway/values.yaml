@@ -1,0 +1,70 @@
+replicaCount: 2
+
+image:
+  repository: ghcr.io/linuxtips/pickstack-api-gateway
+  tag: "0.1.0"
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 8080
+  targetPort: 8080
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+probes:
+  liveness:
+    path: /healthz
+    initialDelaySeconds: 10
+    periodSeconds: 15
+  readiness:
+    path: /readyz
+    initialDelaySeconds: 5
+    periodSeconds: 10
+
+config:
+  serviceName: api-gateway
+  logLevel: info
+  logFormat: json
+  # URLs internas dos módulos (DNS do Service ClusterIP).
+  authSvcUrl:   "http://pickstack-auth-svc:8081"
+  focusSvcUrl:  "http://pickstack-focus-svc:8082"
+  cardsSvcUrl:  "http://pickstack-cards-svc:8083"
+  trilhaSvcUrl: "http://pickstack-trilha-svc:8084"
+
+secretRef:
+  name: pickstack-gateway-secrets
+
+ingress:
+  enabled: false
+  className: nginx
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
+  hosts:
+    - host: api.pickstack.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+  # - secretName: pickstack-api-tls
+  #   hosts:
+  #     - api.pickstack.local
+
+metrics:
+  enabled: false
+  serviceMonitor:
+    interval: 30s
+    scrapeTimeout: 10s
+    path: /metrics
+    labels: {}
+
+podAnnotations: {}
+nodeSelector: {}
+tolerations: []
+affinity: {}

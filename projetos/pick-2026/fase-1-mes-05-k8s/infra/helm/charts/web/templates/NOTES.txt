@@ -1,0 +1,14 @@
+{{ include "svc.fullname" . }} (web/SvelteKit) instalado.
+
+Service: {{ include "svc.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.service.port }}
+
+{{- if .Values.ingress.enabled }}
+Acesse via Ingress:
+  {{- range .Values.ingress.hosts }}
+  - http{{ if $.Values.ingress.tls }}s{{ end }}://{{ .host }}
+  {{- end }}
+{{- else }}
+Ingress desabilitado. Para acessar localmente:
+  kubectl -n {{ .Release.Namespace }} port-forward svc/{{ include "svc.fullname" . }} 5173:{{ .Values.service.port }}
+  open http://localhost:5173
+{{- end }}

@@ -1,0 +1,83 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# PICKStack — Empacotamento e publicação do umbrella Helm chart
+#
+# O que faz:
+#   - Em push para main que toca infra/helm/**: empacota o umbrella e sobe
+#     o tgz como artifact (para inspeção e debug).
+#   - Em tag v*: cria uma GitHub Release anexando o tgz do chart.
+#   - workflow_dispatch também disponível para empacotar sob demanda.
+#
+# O que ensina ao aluno do PICK:
+#   - helm dependency update vs. helm package.
+#   - Diferença entre artifact (efêmero) e release (durável).
+#   - Como expor um chart Helm para consumo externo (passo zero antes de
+#     publicar em um chart repo gh-pages ou OCI).
+#
+# Roadmap (deixado de lado por enquanto):
+#   - Publicar o chart como OCI artifact no GHCR (`helm push oci://...`).
+#   - Branch gh-pages com index.yaml (chart repo clássico).
+# ─────────────────────────────────────────────────────────────────────────────
+
+name: helm-release
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "infra/helm/**"
+      - ".github/workflows/helm-release.yml"
+    tags: ["v*"]
+  workflow_dispatch:
+
+# Observação pedagógica: o filtro `paths` aplica a TODOS os eventos push,
+# inclusive tags. Como tag releases tendem a tocar Chart.yaml/version no
+# mesmo commit, na prática isso casa. Se um dia precisar disparar release
+# por tag sem tocar em infra/helm, troque por dois `on:` separados.
+
+permissions:
+  contents: write # necessário para criar releases
+
+concurrency:
+  group: helm-release-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  UMBRELLA: infra/helm/pickstack
+  PACKAGE_DIR: /tmp/helm-packages
+
+jobs:
+  package:
+    name: package umbrella chart
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: v3.15.4
+
+      - name: helm dependency update
+        run: helm dependency update "${UMBRELLA}"
+        continue-on-error: true
+
+      - name: helm package
+        run: |
+          mkdir -p "${PACKAGE_DIR}"
+          helm package "${UMBRELLA}" --destination "${PACKAGE_DIR}"
+          ls -la "${PACKAGE_DIR}"
+
+      - name: Upload package artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: pickstack-helm-chart
+          path: ${{ env.PACKAGE_DIR }}/*.tgz
+          retention-days: 30
+
+      - name: Create GitHub Release (apenas em tag)
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ env.PACKAGE_DIR }}/*.tgz
+          generate_release_notes: true

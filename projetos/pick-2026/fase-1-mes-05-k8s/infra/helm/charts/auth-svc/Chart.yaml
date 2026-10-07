@@ -1,0 +1,7 @@
+apiVersion: v2
+name: auth-svc
+description: PICKStack — serviço de autenticação (emite/valida JWT).
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+keywords: [pickstack, auth, jwt]

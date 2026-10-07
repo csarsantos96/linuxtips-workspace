@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "svc.fullname" . }}-config
+  labels:
+    {{- include "svc.labels" . | nindent 4 }}
+data:
+  SERVICE_NAME: {{ .Values.config.serviceName | quote }}
+  LOG_LEVEL: {{ .Values.config.logLevel | quote }}
+  LOG_FORMAT: {{ .Values.config.logFormat | quote }}
+  PORT: {{ .Values.service.targetPort | quote }}
+  PUBLIC_API_URL: {{ .Values.config.publicApiUrl | quote }}
+  NODE_ENV: {{ .Values.config.nodeEnv | quote }}

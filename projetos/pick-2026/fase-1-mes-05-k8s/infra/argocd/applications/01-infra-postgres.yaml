@@ -1,0 +1,42 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: infra-postgres
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://charts.bitnami.com/bitnami
+    chart: postgresql
+    targetRevision: "15.5.20"
+    helm:
+      releaseName: pickstack-postgres
+      values: |
+        auth:
+          username: pickstack
+          database: pickstack
+          existingSecret: pickstack-postgres-auth
+        primary:
+          persistence:
+            size: 8Gi
+          initdb:
+            scripts:
+              01-schemas.sql: |
+                CREATE SCHEMA IF NOT EXISTS auth;
+                CREATE SCHEMA IF NOT EXISTS focus;
+                CREATE SCHEMA IF NOT EXISTS cards;
+                CREATE SCHEMA IF NOT EXISTS trilha;
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: pickstack
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
