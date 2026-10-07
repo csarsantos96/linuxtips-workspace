@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Giropops Status</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🔍 Giropops Status</h1>
+            <p class="subtitle">Monitoramento de Servicos</p>
+            <span class="version">v{{ version }}</span>
+        </header>
+
+        <div class="controls">
+            <button id="btn-check" onclick="checkAll()">Verificar Todos</button>
+            <button id="btn-add" onclick="toggleForm()">+ Adicionar Servico</button>
+        </div>
+
+        <div id="add-form" class="add-form hidden">
+            <input type="text" id="service-name" placeholder="Nome do servico (ex: api-producao)">
+            <input type="url" id="service-url" placeholder="URL (ex: https://api.exemplo.com/health)">
+            <button onclick="addService()">Cadastrar</button>
+            <button class="btn-cancel" onclick="toggleForm()">Cancelar</button>
+        </div>
+
+        <div id="services-list" class="services-list">
+            {% if services %}
+                {% for s in services %}
+                <div class="service-card status-{{ s.status | lower }}">
+                    <div class="service-header">
+                        <span class="status-badge {{ s.status | lower }}">{{ s.status }}</span>
+                        <h3>{{ s.name }}</h3>
+                        <button class="btn-delete" onclick="removeService('{{ s.name }}')" title="Remover">✕</button>
+                    </div>
+                    <div class="service-details">
+                        <p class="service-url">{{ s.url }}</p>
+                        <div class="service-metrics">
+                            {% if s.response_time_ms is defined %}
+                            <span class="metric">
+                                <strong>{{ s.response_time_ms }}ms</strong>
+                                <small>resposta</small>
+                            </span>
+                            {% endif %}
+                            {% if s.status_code is defined and s.status_code > 0 %}
+                            <span class="metric">
+                                <strong>{{ s.status_code }}</strong>
+                                <small>HTTP</small>
+                            </span>
+                            {% endif %}
+                            {% if s.checked_at is defined %}
+                            <span class="metric">
+                                <strong>{{ s.checked_at }}</strong>
+                                <small>ultimo check</small>
+                            </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="empty-state">
+                    <p>Nenhum servico cadastrado.</p>
+                    <p>Clique em <strong>+ Adicionar Servico</strong> para comecar.</p>
+                </div>
+            {% endif %}
+        </div>
+
+        <footer>
+            <p>Giropops Status &bull; LINUXtips</p>
+        </footer>
+    </div>
+
+    <script>
+        function toggleForm() {
+            document.getElementById('add-form').classList.toggle('hidden');
+        }
+
+        async function addService() {
+            const name = document.getElementById('service-name').value.trim();
+            const url = document.getElementById('service-url').value.trim();
+
+            if (!name || !url) {
+                alert('Preencha o nome e a URL do servico.');
+                return;
+            }
+
+            const resp = await fetch('/api/services', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, url }),
+            });
+
+            if (resp.ok) {
+                location.reload();
+            } else {
+                const data = await resp.json();
+                alert(data.error || 'Erro ao cadastrar servico.');
+            }
+        }
+
+        async function removeService(name) {
+            if (!confirm(`Remover o servico "${name}"?`)) return;
+
+            const resp = await fetch(`/api/services/${name}`, { method: 'DELETE' });
+            if (resp.ok) {
+                location.reload();
+            }
+        }
+
+        async function checkAll() {
+            const btn = document.getElementById('btn-check');
+            btn.textContent = 'Verificando...';
+            btn.disabled = true;
+
+            await fetch('/api/check', { method: 'POST' });
+            location.reload();
+        }
+    </script>
+</body>
+</html>
