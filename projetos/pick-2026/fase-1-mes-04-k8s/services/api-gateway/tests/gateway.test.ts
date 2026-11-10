@@ -80,9 +80,11 @@ Deno.test("rota /api/auth/* faz proxy para auth-svc sem exigir token", async () 
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ email: "a@b.com", password: "x" }),
     });
+    await res.text(); // consume body to avoid resource leak
     assertEquals(res.status, 200);
     assertEquals(captures.length, 1);
-    assertEquals(captures[0].path, "/auth/login");
+    // Gateway stripa o prefix /api/auth — upstream recebe /login.
+    assertEquals(captures[0].path, "/login");
     assertEquals(captures[0].method, "POST");
   } finally {
     await stub.close();
@@ -90,10 +92,10 @@ Deno.test("rota /api/auth/* faz proxy para auth-svc sem exigir token", async () 
 });
 
 Deno.test("rota protegida com token válido encaminha com x-user-id/x-tenant-id", async () => {
-  // stub do auth-svc /auth/verify
+  // stub do auth-svc /verify (sem prefix /auth — auth-svc segue MODULE-CONTRACT)
   const authStub = await startStub((req) => {
     const url = new URL(req.url);
-    if (url.pathname === "/auth/verify") {
+    if (url.pathname === "/verify") {
       return new Response(
         JSON.stringify({ valid: true, user_id: "u-1", tenant_id: "t-1" }),
         { status: 200, headers: { "content-type": "application/json" } },
@@ -122,6 +124,7 @@ Deno.test("rota protegida com token válido encaminha com x-user-id/x-tenant-id"
     const res = await app.request("/api/focus/sessions", {
       headers: { authorization: "Bearer fake-but-cached" },
     });
+    await res.text(); // consume body to avoid resource leak
     assertEquals(res.status, 200);
     assertEquals(focusCaptures.length, 1);
     assertEquals(focusCaptures[0]["x-user-id"], "u-1");

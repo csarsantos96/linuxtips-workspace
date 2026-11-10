@@ -36,10 +36,14 @@ export interface StreakInfo {
 interface RawSession {
 	id: string;
 	type: string;
-	planned_duration_s: number;
-	started_at: string;
+	planned_duration_s?: number;
+	plannedDurationS?: number;
+	started_at?: string;
+	startedAt?: string;
 	ended_at?: string | null;
+	endedAt?: string | null;
 	actual_duration_s?: number | null;
+	actualDurationS?: number | null;
 	status: string;
 	note?: string | null;
 }
@@ -60,10 +64,10 @@ function normalizeSession(r: RawSession): StudySession {
 	return {
 		id: r.id,
 		type: r.type as SessionType,
-		plannedDurationS: r.planned_duration_s,
-		startedAt: r.started_at,
-		endedAt: r.ended_at ?? null,
-		actualDurationS: r.actual_duration_s ?? null,
+		plannedDurationS: (r.plannedDurationS ?? r.planned_duration_s)!,
+		startedAt: (r.startedAt ?? r.started_at)!,
+		endedAt: r.endedAt ?? r.ended_at ?? null,
+		actualDurationS: r.actualDurationS ?? r.actual_duration_s ?? null,
 		status: r.status as SessionStatus,
 		note: r.note ?? null
 	};
@@ -72,9 +76,7 @@ function normalizeSession(r: RawSession): StudySession {
 export const focusApi = {
 	async list(params?: { from?: string; to?: string; limit?: number; offset?: number }) {
 		const qs = toQuery(params);
-		const raw = await api.get<{ items: RawSession[]; total: number }>(
-			`/api/focus/sessions${qs}`
-		);
+		const raw = await api.get<{ items: RawSession[]; total: number }>(`/api/focus/sessions${qs}`);
 		return { items: raw.items.map(normalizeSession), total: raw.total };
 	},
 
@@ -131,5 +133,8 @@ function toQuery(p?: Record<string, unknown>): string {
 	if (!p) return '';
 	const entries = Object.entries(p).filter(([, v]) => v !== undefined && v !== null);
 	if (entries.length === 0) return '';
-	return '?' + entries.map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(String(v))}`).join('&');
+	return (
+		'?' +
+		entries.map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(String(v))}`).join('&')
+	);
 }

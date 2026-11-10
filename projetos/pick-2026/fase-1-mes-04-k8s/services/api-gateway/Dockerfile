@@ -25,6 +25,6 @@ EXPOSE 8080
 USER nonroot:nonroot
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-  CMD ["/app/api-gateway", "--healthcheck"] || exit 1
+  CMD ["/app/api-gateway", "--healthcheck"]
 
 ENTRYPOINT ["/app/api-gateway"]

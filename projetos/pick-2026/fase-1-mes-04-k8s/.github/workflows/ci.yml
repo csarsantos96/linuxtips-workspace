@@ -35,6 +35,31 @@ permissions:
   contents: read
 
 jobs:
+  cards-authorization:
+    name: cards authorization (Postgres)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: pickstack
+          POSTGRES_PASSWORD: pickstack-test
+          POSTGRES_DB: pickstack
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U pickstack"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DATABASE_URL: postgres://pickstack:pickstack-test@localhost:5432/pickstack
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Test authorization against real Postgres
+        working-directory: services/cards-svc
+        run: deno task test
+
   # ───────────────────────────────────────────────────────────────────────────
   # Lint + test dos microsserviços Deno
   # ───────────────────────────────────────────────────────────────────────────

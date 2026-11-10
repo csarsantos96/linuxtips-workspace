@@ -40,10 +40,10 @@
 				hint="Recorde: {data.streak?.longest ?? 0}"
 				icon={Flame}
 			/>
-			<StatCard label="Cards revisados hoje" value={data.extras.reviewedToday} icon={Layers} />
+			<StatCard label="Revisões de cards" value={data.extras.totalReviews ?? '—'} icon={Layers} />
 			<StatCard
-				label="% roadmap atual"
-				value="{data.extras.pctRoadmap}%"
+				label="Progresso das trilhas"
+				value={data.extras.pctRoadmap === null ? '—' : `${data.extras.pctRoadmap}%`}
 				icon={Map}
 			/>
 		</div>

@@ -1,4 +1,4 @@
-// Middleware de autenticação: chama POST {AUTH_SVC_URL}/auth/verify e
+// Middleware de autenticação: chama POST {AUTH_SVC_URL}/verify e
 // guarda resultado em cache em memória por VERIFY_CACHE_TTL_SECONDS.
 
 import type { MiddlewareHandler } from "hono";
@@ -37,7 +37,7 @@ async function verifyToken(token: string): Promise<VerifyResult> {
   const ctrl = new AbortController();
   const tm = setTimeout(() => ctrl.abort(), timeoutMs);
   try {
-    const r = await fetch(`${authUrl}/auth/verify`, {
+    const r = await fetch(`${authUrl}/verify`, {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ token }),

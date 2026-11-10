@@ -43,23 +43,32 @@ interface RawRoadmap {
 	id: string;
 	name: string;
 	description?: string | null;
-	is_public: boolean;
-	owner_id: string;
-	tenant_id: string;
+	is_public?: boolean;
+	isPublic?: boolean;
+	owner_id?: string;
+	ownerId?: string;
+	tenant_id?: string;
+	tenantId?: string;
 	source_url?: string | null;
-	created_at: string;
+	sourceUrl?: string | null;
+	created_at?: string;
+	createdAt?: string;
 }
 
 interface RawNode {
 	id: string;
-	roadmap_id: string;
-	external_id: string;
+	roadmap_id?: string;
+	roadmapId?: string;
+	external_id?: string;
+	externalId?: string;
 	title: string;
 	description?: string | null;
 	category?: string | null;
 	depends_on?: string[] | null;
+	dependsOn?: string[] | null;
 	resources?: RoadmapResource[] | null;
 	order_index?: number | null;
+	orderIndex?: number | null;
 	progress?: { status: NodeStatus } | null;
 }
 
@@ -72,25 +81,25 @@ function normalizeRoadmap(r: RawRoadmap, counts?: { node: number; done: number }
 		id: r.id,
 		title: r.name,
 		description: r.description ?? null,
-		isPublic: !!r.is_public,
-		ownerId: r.owner_id,
+		isPublic: !!(r.isPublic ?? r.is_public),
+		ownerId: (r.ownerId ?? r.owner_id)!,
 		nodeCount: counts?.node ?? 0,
 		doneCount: counts?.done ?? 0,
-		createdAt: r.created_at
+		createdAt: (r.createdAt ?? r.created_at)!
 	};
 }
 
-function normalizeNode(n: RawNode): RoadmapNode {
+function normalizeNode(n: RawNode, ids: Map<string, string>): RoadmapNode {
 	return {
 		id: n.id,
-		roadmapId: n.roadmap_id,
+		roadmapId: (n.roadmapId ?? n.roadmap_id)!,
 		// `depends_on` é array de external_ids; usamos o primeiro como "parent"
 		// para fins de visualização (a UI espera grafo árvore).
-		parentId: n.depends_on && n.depends_on.length > 0 ? n.depends_on[0] : null,
+		parentId: ids.get((n.dependsOn ?? n.depends_on)?.[0] ?? '') ?? null,
 		title: n.title,
 		description: n.description ?? null,
 		resources: n.resources ?? [],
-		order: n.order_index ?? 0,
+		order: n.orderIndex ?? n.order_index ?? 0,
 		status: n.progress?.status ?? 'todo'
 	};
 }
@@ -98,16 +107,14 @@ function normalizeNode(n: RawNode): RoadmapNode {
 export const trilhaApi = {
 	async list() {
 		const raw = await api.get<RawRoadmap[]>('/api/trilha/roadmaps');
-		// Sem counts na rota de listagem (backend não devolve) — fica 0/0.
-		// Pedagogia: poderíamos pedir um /roadmaps?include=stats no backend,
-		// mas para o MVP é razoável o card mostrar 0/0 e o detalhe carregar
-		// os números reais ao abrir.
-		return { items: raw.map((r) => normalizeRoadmap(r)) };
+		const items = await Promise.all(raw.map(async (r) => (await trilhaApi.get(r.id)).roadmap));
+		return { items };
 	},
 
 	async get(id: string) {
 		const raw = await api.get<RawRoadmapDetail>(`/api/trilha/roadmaps/${id}`);
-		const nodes = (raw.nodes ?? []).map(normalizeNode);
+		const ids = new Map((raw.nodes ?? []).map((n) => [n.externalId ?? n.external_id ?? '', n.id]));
+		const nodes = (raw.nodes ?? []).map((n) => normalizeNode(n, ids));
 		const doneCount = nodes.filter((n) => n.status === 'done').length;
 		return {
 			roadmap: normalizeRoadmap(raw, { node: nodes.length, done: doneCount }),

@@ -153,7 +153,7 @@ Deno.test("GET /healthz responde 200", async () => {
 
 Deno.test("GET /auth/me sem token = 401", async () => {
   const app = createApp({ db: new FakeDb() as never });
-  const res = await app.request("/auth/me");
+  const res = await app.request("/me");
   assertEquals(res.status, 401);
   const body = await res.json();
   assertEquals(body.code, "MISSING_TOKEN");
@@ -161,7 +161,7 @@ Deno.test("GET /auth/me sem token = 401", async () => {
 
 Deno.test("GET /auth/me com Bearer inválido = 401", async () => {
   const app = createApp({ db: new FakeDb() as never });
-  const res = await app.request("/auth/me", {
+  const res = await app.request("/me", {
     headers: { authorization: "Bearer not-a-jwt" },
   });
   assertEquals(res.status, 401);
@@ -169,7 +169,7 @@ Deno.test("GET /auth/me com Bearer inválido = 401", async () => {
 
 Deno.test("POST /auth/verify com token inválido retorna 200 + valid:false", async () => {
   const app = createApp({ db: new FakeDb() as never });
-  const res = await app.request("/auth/verify", {
+  const res = await app.request("/verify", {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ token: "garbage" }),
@@ -181,7 +181,7 @@ Deno.test("POST /auth/verify com token inválido retorna 200 + valid:false", asy
 
 Deno.test("POST /auth/login com body sem campos = 400", async () => {
   const app = createApp({ db: new FakeDb() as never });
-  const res = await app.request("/auth/login", {
+  const res = await app.request("/login", {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({}),
@@ -193,7 +193,7 @@ Deno.test("POST /auth/login com body sem campos = 400", async () => {
 
 Deno.test("POST /auth/signup sem password = 400 WEAK_PASSWORD ou MISSING_FIELDS", async () => {
   const app = createApp({ db: new FakeDb() as never });
-  const res = await app.request("/auth/signup", {
+  const res = await app.request("/signup", {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ email: "a@b.com", password: "123" }),
@@ -203,7 +203,7 @@ Deno.test("POST /auth/signup sem password = 400 WEAK_PASSWORD ou MISSING_FIELDS"
 
 Deno.test("POST /auth/logout sem refresh_token = 400 MISSING_FIELDS", async () => {
   const app = createApp({ db: new FakeDb() as never });
-  const res = await app.request("/auth/logout", {
+  const res = await app.request("/logout", {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({}),
@@ -215,7 +215,7 @@ Deno.test("POST /auth/logout sem refresh_token = 400 MISSING_FIELDS", async () =
 
 Deno.test("POST /auth/password sem token = 401 MISSING_TOKEN", async () => {
   const app = createApp({ db: new FakeDb() as never });
-  const res = await app.request("/auth/password", {
+  const res = await app.request("/password", {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ old_password: "x", new_password: "y" }),

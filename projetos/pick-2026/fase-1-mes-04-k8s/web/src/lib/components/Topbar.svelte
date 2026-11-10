@@ -24,9 +24,12 @@
 </script>
 
 <header
-	class="flex h-14 items-center justify-between border-b border-surface-border bg-bg-soft px-4"
+	class="flex h-14 shrink-0 items-center justify-between border-b border-surface-border bg-bg-soft px-4"
 >
 	<div class="text-sm text-muted">
+		<a href="/dashboard" class="md:hidden" aria-label="PICKStack"
+			><img src="/logo.svg" alt="PICKStack" class="h-7" /></a
+		>
 		<slot name="left" />
 	</div>
 
@@ -48,7 +51,8 @@
 		<div class="relative">
 			<button
 				type="button"
-				class="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-slate-200 hover:bg-surface-hover"
+				aria-label="Menu da conta"
+				class="flex min-h-11 min-w-11 items-center gap-2 rounded-md px-2 py-1.5 text-sm text-slate-200 hover:bg-surface-hover"
 				on:click={() => (menuOpen = !menuOpen)}
 			>
 				<span class="grid h-7 w-7 place-items-center rounded-full bg-accent/20 text-accent">
@@ -59,11 +63,7 @@
 
 			{#if menuOpen}
 				<!-- click outside -->
-				<button
-					type="button"
-					class="fixed inset-0 z-30"
-					aria-label="Fechar menu"
-					on:click={close}
+				<button type="button" class="fixed inset-0 z-30" aria-label="Fechar menu" on:click={close}
 				></button>
 				<div
 					class="absolute right-0 z-40 mt-1 w-48 overflow-hidden rounded-md border border-surface-border bg-bg-soft shadow-lg"

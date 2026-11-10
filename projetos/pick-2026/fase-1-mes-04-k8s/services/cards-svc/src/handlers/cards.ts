@@ -1,7 +1,7 @@
 // Handlers de cards (criação, edição, listagem, review, due).
 
 import { Hono } from "hono";
-import { and, eq, lte, sql as dsql } from "drizzle-orm";
+import { and, eq, getTableColumns, lte, or, sql as dsql } from "drizzle-orm";
 import type { Db } from "../db/client.ts";
 import { cards, decks, reviews } from "../db/schema.ts";
 import { getAuth, requireAuth } from "../middleware/auth.ts";
@@ -133,57 +133,72 @@ export function cardsRoutes(db: Db) {
     if (!Number.isFinite(q) || q < 0 || q > 5) {
       return c.json({ error: "quality must be 0..5", code: "bad_request" }, 400);
     }
-    const [card] = await db
-      .select()
-      .from(cards)
-      .where(and(eq(cards.id, id), eq(cards.tenantId, tenantId)));
-    if (!card) return c.json({ error: "not found", code: "not_found" }, 404);
+    return await db.transaction(async (tx) => {
+      // Lock both rows: a concurrent public->private change must complete before
+      // authorization or wait until this authorized review has committed.
+      const [entry] = await tx
+        .select({ card: cards, deck: decks })
+        .from(cards)
+        .innerJoin(decks, and(eq(decks.id, cards.deckId), eq(decks.tenantId, cards.tenantId)))
+        .where(and(eq(cards.id, id), eq(cards.tenantId, tenantId)))
+        .for("update");
+      if (!entry) return c.json({ error: "not found", code: "not_found" }, 404);
+      const { card, deck } = entry;
+      if (deck.ownerId !== userId && deck.isPublic !== true) {
+        return c.json({ error: "forbidden", code: "forbidden" }, 403);
+      }
 
-    const out = sm2({
-      quality: q,
-      easiness: card.easiness,
-      repetitions: card.repetitions,
-      intervalDays: card.intervalDays,
-    });
+      const out = sm2({
+        quality: q,
+        easiness: card.easiness,
+        repetitions: card.repetitions,
+        intervalDays: card.intervalDays,
+      });
 
-    const [updated] = await db
-      .update(cards)
-      .set({
-        easiness: out.easiness,
-        repetitions: out.repetitions,
-        intervalDays: out.intervalDays,
-        dueAt: out.dueAt,
-      })
-      .where(eq(cards.id, id))
-      .returning();
+      const [updated] = await tx
+        .update(cards)
+        .set({
+          easiness: out.easiness,
+          repetitions: out.repetitions,
+          intervalDays: out.intervalDays,
+          dueAt: out.dueAt,
+        })
+        .where(eq(cards.id, id))
+        .returning();
 
-    await db.insert(reviews).values({
-      cardId: id,
-      tenantId,
-      userId,
-      quality: q,
-      prevEasiness: card.easiness,
-      nextEasiness: out.easiness,
-      nextIntervalDays: out.intervalDays,
-    });
-    cardsReviewsTotal.inc({ quality: String(q) });
+      await tx.insert(reviews).values({
+        cardId: id,
+        tenantId,
+        userId,
+        quality: q,
+        prevEasiness: card.easiness,
+        nextEasiness: out.easiness,
+        nextIntervalDays: out.intervalDays,
+      });
+      cardsReviewsTotal.inc({ quality: String(q) });
 
-    return c.json({
-      card: updated,
-      next_due_at: out.dueAt.toISOString(),
-      interval_days: out.intervalDays,
+      return c.json({
+        card: updated,
+        next_due_at: out.dueAt.toISOString(),
+        interval_days: out.intervalDays,
+      });
     });
   });
 
   app.get("/review/due", async (c) => {
-    const { tenantId } = getAuth(c);
+    const { userId, tenantId } = getAuth(c);
     const limit = Math.min(Number(c.req.query("limit") ?? 20), 200);
     const deckId = c.req.query("deck_id");
-    const filters = [eq(cards.tenantId, tenantId), lte(cards.dueAt, new Date())];
+    const filters = [
+      eq(cards.tenantId, tenantId),
+      or(eq(decks.ownerId, userId), eq(decks.isPublic, true)),
+      lte(cards.dueAt, new Date()),
+    ];
     if (deckId) filters.push(eq(cards.deckId, deckId));
     const rows = await db
-      .select()
+      .select(getTableColumns(cards))
       .from(cards)
+      .innerJoin(decks, and(eq(decks.id, cards.deckId), eq(decks.tenantId, cards.tenantId)))
       .where(and(...filters))
       .orderBy(cards.dueAt)
       .limit(limit);

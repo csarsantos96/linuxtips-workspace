@@ -102,10 +102,23 @@ pickstack/
 
 > Pré-requisitos: Docker, docker-compose, Deno 2.x, Node 20+, pnpm.
 
+**Aluno do PICK:** este repositório é privado e não aceita fork. O código chega pelo MESA no seu `linuxtips-workspace` (veja [Como o PICK 2026 vai usar este repo](#como-o-pick-2026-vai-usar-este-repo)). Clone o workspace e entre na pasta da fase:
+
+```bash
+git clone git@github.com:<seu-usuario>/linuxtips-workspace.git
+cd linuxtips-workspace/projetos/<curso>/<branch-da-fase>   # ex.: projetos/pick-2026/fase-1-mes-01-docker
+```
+
+**Time LINUXtips:** clone o upstream direto:
+
 ```bash
 git clone git@github.com:linuxtips/pickstack.git
 cd pickstack
+```
 
+Daí em diante, os comandos são os mesmos, sempre de dentro da pasta do projeto:
+
+```bash
 # sobe postgres, redis, nats e os serviços em containers
 docker compose -f infra/docker-compose.dev.yml up -d
 
@@ -121,7 +134,17 @@ Detalhes (env vars, migrations, seed) em [docs/DEVELOPMENT.md](docs/DEVELOPMENT.
 
 ## Como o PICK 2026 vai usar este repo
 
-Cada aluno faz fork e opera o projeto no cluster dele. Ao longo do curso:
+Este repositório é privado e não aceita fork. Cada aluno recebe o código pelo MESA e opera o projeto no próprio cluster:
+
+1. Conecte seu GitHub no MESA, em **Perfil → Integrações**.
+2. Na área do projeto do seu PICK no MESA, em cada fase liberada, clique em **Aceitar Desafio — Clonar para meu workspace**.
+3. O MESA copia o código da branch da fase (por exemplo `fase-1-mes-01-docker`) para o seu repositório privado `linuxtips-workspace`, na pasta `projetos/<curso>/<branch-da-fase>/`. O `<curso>` é o identificador do seu curso no MESA (por exemplo `pick-2026`). Se o repositório ainda não existir, o MESA cria.
+4. Clone o `linuxtips-workspace` e trabalhe dentro dessa pasta. Na entrega da fase, informe o link dela no seu GitHub.
+
+> Cada fase ganha a sua própria pasta. Sincronizar a fase de novo pelo MESA
+> sobrescreve a pasta com a versão original, e as suas alterações nela se perdem.
+
+Ao longo do curso:
 
 | Fase | Foco curricular | Entrega no projeto |
 |---|---|---|

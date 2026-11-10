@@ -6,7 +6,10 @@ Porta default: **8083**. Schema Postgres: **`cards`**.
 
 ## Endpoints
 
-Headers `x-user-id` e `x-tenant-id` obrigatórios (UUIDs).
+Serviço interno: os clientes usam `/api/cards/*` no api-gateway com token Bearer. O gateway
+autentica a conta e injeta os headers `x-user-id` e `x-tenant-id` (UUIDs). A porta 8083 fica somente
+na rede interna do Compose; não deve ser publicada como endpoint de alunos. No Kubernetes, o Service
+padrão é ClusterIP.
 
 | Método | Rota | Descrição |
 |---|---|---|

@@ -47,7 +47,7 @@ async function getOrCreateTenant(db: Db, slug: string, name: string): Promise<st
 
 export function registerAuthRoutes(app: Hono, db: Db) {
   // POST /auth/signup
-  app.post("/auth/signup", async (c) => {
+  app.post("/signup", async (c) => {
     let body: { email?: string; password?: string; name?: string; tenant_slug?: string };
     try {
       body = await c.req.json();
@@ -108,8 +108,11 @@ export function registerAuthRoutes(app: Hono, db: Db) {
   });
 
   // POST /auth/login
-  app.post("/auth/login", async (c) => {
-    let body: { email?: string; password?: string };
+  // O email é único por tenant (UNIQUE(tenant_id, email)), não globalmente.
+  // Por isso o login aceita tenant_slug opcional. Se omitido e o email existir
+  // em apenas um tenant, ok; se existir em mais, retorna 400 pedindo o slug.
+  app.post("/login", async (c) => {
+    let body: { email?: string; password?: string; tenant_slug?: string };
     try {
       body = await c.req.json();
     } catch {
@@ -117,9 +120,28 @@ export function registerAuthRoutes(app: Hono, db: Db) {
     }
     const email = (body.email ?? "").trim().toLowerCase();
     const password = body.password ?? "";
+    const tenantSlug = (body.tenant_slug ?? "").trim().toLowerCase();
     if (!email || !password) {
       return err(c, 400, "MISSING_FIELDS", "email e password são obrigatórios");
     }
+
+    // Resolve tenant se vier slug.
+    let tenantFilterId: string | null = null;
+    if (tenantSlug) {
+      const t = await db
+        .select({ id: tenants.id })
+        .from(tenants)
+        .where(eq(tenants.slug, tenantSlug))
+        .limit(1);
+      if (t.length === 0) {
+        return err(c, 401, "INVALID_CREDENTIALS", "credenciais inválidas");
+      }
+      tenantFilterId = t[0].id;
+    }
+
+    const whereClause = tenantFilterId
+      ? and(eq(users.email, email), eq(users.tenantId, tenantFilterId))
+      : eq(users.email, email);
 
     const rows = await db
       .select({
@@ -130,11 +152,20 @@ export function registerAuthRoutes(app: Hono, db: Db) {
         passwordHash: users.passwordHash,
       })
       .from(users)
-      .where(eq(users.email, email))
-      .limit(1);
+      .where(whereClause)
+      .limit(2);
 
     if (rows.length === 0) {
       return err(c, 401, "INVALID_CREDENTIALS", "credenciais inválidas");
+    }
+    if (rows.length > 1) {
+      // Email colide entre tenants. Cliente precisa especificar tenant_slug.
+      return err(
+        c,
+        400,
+        "TENANT_REQUIRED",
+        "email existe em múltiplos tenants — informe tenant_slug",
+      );
     }
     const u = rows[0];
     const ok = await bcrypt.compare(password, u.passwordHash);
@@ -154,7 +185,7 @@ export function registerAuthRoutes(app: Hono, db: Db) {
   });
 
   // POST /auth/refresh — rotaciona refresh token.
-  app.post("/auth/refresh", async (c) => {
+  app.post("/refresh", async (c) => {
     let body: { refresh_token?: string };
     try {
       body = await c.req.json();
@@ -209,7 +240,7 @@ export function registerAuthRoutes(app: Hono, db: Db) {
   });
 
   // GET /auth/me
-  app.get("/auth/me", async (c) => {
+  app.get("/me", async (c) => {
     const authH = c.req.header("authorization") ?? "";
     const m = authH.match(/^Bearer\s+(.+)$/i);
     if (!m) return err(c, 401, "MISSING_TOKEN", "Authorization Bearer ausente");
@@ -235,7 +266,7 @@ export function registerAuthRoutes(app: Hono, db: Db) {
 
   // POST /auth/logout — revoga o refresh token informado.
   // Idempotente: refresh inválido/já revogado retorna 204 (não vaza estado da sessão).
-  app.post("/auth/logout", async (c) => {
+  app.post("/logout", async (c) => {
     let body: { refresh_token?: string };
     try {
       body = await c.req.json();
@@ -255,7 +286,7 @@ export function registerAuthRoutes(app: Hono, db: Db) {
 
   // POST /auth/password — troca senha do usuário autenticado (Bearer).
   // Body: { old_password, new_password }.
-  app.post("/auth/password", async (c) => {
+  app.post("/password", async (c) => {
     const authH = c.req.header("authorization") ?? "";
     const m = authH.match(/^Bearer\s+(.+)$/i);
     if (!m) return err(c, 401, "MISSING_TOKEN", "Authorization Bearer ausente");
@@ -309,7 +340,7 @@ export function registerAuthRoutes(app: Hono, db: Db) {
   });
 
   // POST /auth/verify — usado pelo gateway. Sempre 200; campo `valid` indica.
-  app.post("/auth/verify", async (c) => {
+  app.post("/verify", async (c) => {
     let body: { token?: string };
     try {
       body = await c.req.json();

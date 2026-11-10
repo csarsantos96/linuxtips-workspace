@@ -36,6 +36,8 @@ x-svc-env: &svc-env
   MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-pickstack-dev}
   JWT_ISSUER: ${JWT_ISSUER:-pickstack-local}
   JWT_AUDIENCE: ${JWT_AUDIENCE:-pickstack}
+  # HS256 — substituir em produção. Use pelo menos 32 caracteres.
+  JWT_SECRET: ${JWT_SECRET:-dev-only-change-me-please-32-chars-min-secret}
 
 services:
   # ---------------------------------------------------------------------------
@@ -167,8 +169,8 @@ services:
       SERVICE_NAME: cards-svc
       PG_SCHEMA: cards
       PORT: "8083"
-    ports:
-      - "${CARDS_SVC_PORT:-8083}:8083"
+    # Internal service: authenticated clients enter through api-gateway.
+    # Publishing this port would expose trusted identity headers to clients.
     depends_on:
       postgres: { condition: service_healthy }
       redis:    { condition: service_healthy }
@@ -232,7 +234,7 @@ services:
       PUBLIC_API_URL: "http://localhost:${API_GATEWAY_PORT:-8080}"
       NODE_ENV: development
     ports:
-      - "${WEB_PORT:-5173}:5173"
+      - "${WEB_PORT:-5173}:3000"
     depends_on:
       api-gateway: { condition: service_started }
     networks: [pickstack-net]

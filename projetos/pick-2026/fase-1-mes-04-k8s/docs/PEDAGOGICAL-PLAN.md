@@ -10,10 +10,18 @@ Este documento mapeia cada bloco do currículo do PICK em **entregas concretas n
 
 O PICKStack **não é um projeto fictício**. Ele é uma plataforma SaaS real, operada como tal:
 
-- **Você é o operador.** Cada aluno faz fork e roda a plataforma no cluster dele (kind/k3d local, e depois EC2/EKS/cloud).
+- **Você é o operador.** Cada aluno recebe o código pelo MESA no seu repositório privado `linuxtips-workspace` e roda a plataforma no próprio cluster (kind/k3d local, e depois EC2/EKS/cloud).
 - **Não pule camadas.** Cada mês adiciona uma capacidade nova. Não dá pra fazer ArgoCD se você ainda não fez `kubectl apply` na mão pra sentir a dor.
 - **Quebre de propósito.** Depois que funcionar, derrube serviço, mate node, suba versão errada. O que aprende mais é o aluno que sabe consertar.
-- **Documente o caminho.** Cada aluno mantém `NOTAS.md` no fork — vira runbook pessoal de carreira.
+- **Documente o caminho.** Cada aluno mantém `NOTAS.md` no seu `linuxtips-workspace` — vira runbook pessoal de carreira.
+
+---
+
+## Como o código chega até o aluno
+
+O `linuxtips/pickstack` é privado e não aceita fork. Com o GitHub conectado no MESA (**Perfil → Integrações**), o aluno clica em **Aceitar Desafio — Clonar para meu workspace** em cada fase liberada. O MESA copia a branch da fase para o repositório privado `<usuario>/linuxtips-workspace`, na pasta `projetos/<curso>/<branch-da-fase>/`, e cria o repositório na primeira vez. O `<curso>` é o identificador do curso no MESA (por exemplo `pick-2026`).
+
+Cada fase tem a sua pasta, e a entrega da fase é o link dela. Neste documento, "pasta da fase" é sempre essa pasta.
 
 ---
 
@@ -41,7 +49,7 @@ O PICKStack **não é um projeto fictício**. Ele é uma plataforma SaaS real, o
 **Currículo PICK:** o que é container, namespaces, cgroups, imagens, `docker run`, redes, volumes, `docker compose`.
 
 **Entrega no PICKStack:**
-1. Clone o repo (`git clone <fork>`).
+1. No MESA, clique em **Aceitar Desafio — Clonar para meu workspace** na fase 1, clone o seu `linuxtips-workspace` e entre em `projetos/<curso>/fase-1-mes-01-docker/`.
 2. Suba a infra base (Postgres, Redis, NATS) com `docker compose -f infra/docker-compose.dev.yml --profile infra up`.
 3. Suba os serviços em compose também (sem buildar — usa imagens já publicadas no GHCR pelo time do PICK).
 4. Acesse `http://localhost:5173` e cadastre um usuário.
@@ -66,7 +74,7 @@ O PICKStack **não é um projeto fictício**. Ele é uma plataforma SaaS real, o
 2. Meta: reduzir tamanho da imagem em ≥40% sem perder funcionalidade.
 3. Adiciona `HEALTHCHECK` no Dockerfile e usa em compose.
 4. Roda `docker scout` ou `trivy` na imagem e mitiga vulnerabilidades.
-5. Abre PR contra o fork dele (NÃO no upstream) com o Dockerfile otimizado.
+5. Abre PR no próprio `linuxtips-workspace` (branch nova → `main`) com o Dockerfile otimizado.
 
 **O que o aluno aprende:**
 - Como escolher base image (distroless vs alpine vs slim).
@@ -83,10 +91,10 @@ O PICKStack **não é um projeto fictício**. Ele é uma plataforma SaaS real, o
 **Currículo:** registry privado, CI build, image signing, SBOM, supply chain.
 
 **Entrega:**
-1. Configurar GitHub Actions no fork: workflow `.github/workflows/build.yml` que faz build matrix dos 6 serviços e pushpa pra GHCR pessoal (`ghcr.io/<seu-usuario>/pickstack-<svc>`).
+1. Configurar GitHub Actions no `linuxtips-workspace`: um workflow que faz build matrix dos 6 serviços e pushpa pra GHCR pessoal (`ghcr.io/<seu-usuario>/pickstack-<svc>`). O GitHub só executa workflows da raiz do repositório, então o arquivo vai em `.github/workflows/` na raiz do workspace, não dentro da pasta da fase. Use o `.github/workflows/build-images.yml` do projeto como base e aponte cada `context` para `projetos/<curso>/fase-1-mes-03-docker/services/<svc>` (e `.../web`).
 2. Sign images com `cosign` (chave gerada localmente).
 3. Gerar SBOM com `syft`.
-4. README do fork tem badge de build status.
+4. README do `linuxtips-workspace` tem badge de build status.
 
 **Aprende:** GHCR auth, matrix builds, secrets em Actions, cosign keyless ou key-pair, SBOM básico.
 
@@ -225,7 +233,7 @@ O PICKStack **não é um projeto fictício**. Ele é uma plataforma SaaS real, o
 
 **Entrega:**
 1. Instalar ArgoCD no cluster.
-2. Aplicar o `infra/argocd/app-of-apps.yaml` apontando para o fork do aluno.
+2. Aplicar o `infra/argocd/app-of-apps.yaml` apontando para o `linuxtips-workspace` do aluno: trocar o `repoURL` (hoje `https://github.com/linuxtips/pickstack`) e prefixar os `path` do app-of-apps e das Applications com a pasta da fase. Como o workspace é privado, cadastre o repositório no ArgoCD com um token de leitura.
 3. Configurar:
    - Sync automático com pruning
    - Self-heal
@@ -269,7 +277,7 @@ Pegar um módulo (focus, cards, trilha) e:
 
 **Aprende:** engenharia de plataforma, não só infraestrutura.
 
-**Entrega:** PR mergeado no upstream do PICKStack com a feature/operação + apresentação de 10 min na mentoria.
+**Entrega:** PR mergeado no `linuxtips-workspace` do aluno com a feature/operação + apresentação de 10 min na mentoria. Como o upstream não aceita fork, é o time que traz para o `linuxtips/pickstack` os módulos que quiser incorporar.
 
 ---
 
@@ -284,7 +292,7 @@ Pegar um módulo (focus, cards, trilha) e:
   - Mostra observabilidade: dashboard, alerta, logs.
   - Mostra resiliência: mata um pod, mostra recovery.
   - Pitch: qual problema resolve, métricas de adoção (mesmo simuladas), aprendizado.
-- **Repositório do aluno** público com README contando a jornada (12 meses de commits e issues).
+- **Repositório público** com a versão do PICKStack do aluno e README contando a jornada dos 12 meses. O `linuxtips-workspace` é privado, então o aluno publica a pasta do projeto num repositório público próprio.
 - **Runbook pessoal** documentando os 15 cenários de troubleshooting que enfrentou.
 
 **Aprende:** comunicação técnica, narrativa de carreira, o "antes e depois" de um ano.
@@ -296,7 +304,7 @@ Pegar um módulo (focus, cards, trilha) e:
 ## Como o time do PICK opera este projeto
 
 - **Upstream** (`linuxtips/pickstack`): mantido pelo time. Releases versionadas por marco curricular (`v0.1.0` = Mês 4 estado, `v0.2.0` = Mês 6, etc.).
-- **Alunos:** fazem fork no GitHub pessoal. PRs entre forks são incentivados (alunos revendo uns aos outros).
+- **Alunos:** recebem o código pelo MESA no `linuxtips-workspace` (privado), sem fork. Peer review é incentivado: o aluno adiciona um colega como colaborador do workspace e pede review no PR.
 - **Issues:** o time abre **issues didáticas** (`good first issue`, `mes-5`, `mes-7-cka`) com escopo claro. Aluno escolhe e resolve.
 - **Releases:** cada release do upstream é acompanhada por um post no canal da turma com "o que mudou e como aplicar".
 - **Mentoria:** os profissionais convidados revisam PRs reais dos alunos. É o equivalente a code review em empresa.
@@ -317,10 +325,10 @@ Coisas que **não** estão no escopo da Fase 1 (PICK 2026):
 
 | Métrica | Meta para a turma de 2026 |
 |---|---|
-| % de alunos com fork ativo | ≥ 80% após mês 3 |
+| % de alunos com o projeto clonado no workspace pelo MESA | ≥ 80% após mês 3 |
 | % de alunos com cluster próprio rodando o stack | ≥ 70% após mês 6 |
 | Issues didáticas resolvidas (média por aluno) | ≥ 8 ao longo do ano |
-| PRs cross-fork (peer review) | ≥ 3 por aluno |
+| PRs revisados por colegas (peer review) | ≥ 3 por aluno |
 | Cobertura no projeto final (cluster + GitOps + obs + SLO) | ≥ 60% dos alunos demonstrando todos os 4 |
 | Aprovação no CKA (entre quem fez a prova) | ≥ 75% |
 | Aprovação no CKAD | ≥ 80% |

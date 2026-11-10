@@ -35,26 +35,34 @@ interface RawDeck {
 	id: string;
 	name: string;
 	description?: string | null;
-	is_public: boolean;
-	owner_id: string;
-	tenant_id: string;
+	is_public?: boolean;
+	isPublic?: boolean;
+	owner_id?: string;
+	ownerId?: string;
+	tenant_id?: string;
+	tenantId?: string;
 	tags?: string[] | null;
-	created_at: string;
+	created_at?: string;
+	createdAt?: string;
 	card_count?: number;
 	due_count?: number;
 }
 
 interface RawCard {
 	id: string;
-	deck_id: string;
+	deck_id?: string;
+	deckId?: string;
 	front: string;
 	back: string;
 	tags?: string[] | null;
 	easiness: number;
-	interval_days: number;
+	interval_days?: number;
+	intervalDays?: number;
 	repetitions: number;
-	due_at: string;
-	created_at: string;
+	due_at?: string;
+	dueAt?: string;
+	created_at?: string;
+	createdAt?: string;
 }
 
 function normalizeDeck(d: RawDeck): Deck {
@@ -62,32 +70,32 @@ function normalizeDeck(d: RawDeck): Deck {
 		id: d.id,
 		name: d.name,
 		description: d.description ?? null,
-		isPublic: !!d.is_public,
+		isPublic: !!(d.isPublic ?? d.is_public),
 		cardCount: d.card_count ?? 0,
 		dueCount: d.due_count ?? 0,
-		ownerId: d.owner_id,
-		createdAt: d.created_at
+		ownerId: (d.ownerId ?? d.owner_id)!,
+		createdAt: (d.createdAt ?? d.created_at)!
 	};
 }
 
 function normalizeCard(c: RawCard): Card {
 	return {
 		id: c.id,
-		deckId: c.deck_id,
+		deckId: (c.deckId ?? c.deck_id)!,
 		front: c.front,
 		back: c.back,
 		tags: c.tags ?? [],
 		ease: c.easiness,
-		intervalDays: c.interval_days,
-		dueAt: c.due_at,
-		createdAt: c.created_at
+		intervalDays: (c.intervalDays ?? c.interval_days)!,
+		dueAt: (c.dueAt ?? c.due_at)!,
+		createdAt: (c.createdAt ?? c.created_at)!
 	};
 }
 
 export const cardsApi = {
 	async listDecks() {
 		const raw = await api.get<RawDeck[]>('/api/cards/decks');
-		return { items: raw.map(normalizeDeck) };
+		return { items: await Promise.all(raw.map((d) => cardsApi.getDeck(d.id))) };
 	},
 	async getDeck(id: string) {
 		const raw = await api.get<RawDeck>(`/api/cards/decks/${id}`);
@@ -101,7 +109,10 @@ export const cardsApi = {
 		});
 		return normalizeDeck(raw);
 	},
-	async updateDeck(id: string, input: Partial<{ name: string; description: string; isPublic: boolean }>) {
+	async updateDeck(
+		id: string,
+		input: Partial<{ name: string; description: string; isPublic: boolean }>
+	) {
 		const raw = await api.patch<RawDeck>(`/api/cards/decks/${id}`, {
 			name: input.name,
 			description: input.description,

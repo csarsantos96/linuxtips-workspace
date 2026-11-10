@@ -29,8 +29,8 @@
 		}
 	}
 
-	$: doneCount = nodes.filter((n) => n.status === 'done' && n.parentId).length;
-	$: leafCount = nodes.filter((n) => n.parentId).length;
+	$: doneCount = nodes.filter((n) => n.status === 'done').length;
+	$: leafCount = nodes.length;
 	$: pct = leafCount === 0 ? 0 : Math.round((doneCount / leafCount) * 100);
 </script>
 
